@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botmaton - Industrial Facility Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bot-primary: #00d4ff;
+            --bot-secondary: #0099ff;
+            --bot-accent: #00ff88;
+            --bot-glow: rgba(0, 212, 255, 0.5);
+            --bot-dark: #0a0a1a;
+            --bot-darker: #050510;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bot-darker);
+            min-height: 100vh;
+            overflow: hidden;
+            color: #fff;
+            user-select: none;
+        }
+
+        /* Particle Background */
+        .particle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(50, 0, 100, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 50, 100, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, #0a0a1a 0%, #020208 100%);
+        }
+
+        canvas#particleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(5, 5, 16, 0.95) 0%, transparent 100%);
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            position: relative;
+            width: 50px;
+            height: 50px;
+        }
+
+        .logo-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-ring {
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: 58px;
+            height: 58px;
+            border: 2px solid var(--bot-primary);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: logoSpin 3s linear infinite;
+        }
+
+        @keyframes logoSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .logo-text h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #fff 0%, var(--bot-primary) 50%, var(--bot-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text .tagline-primary {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 11px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: var(--bot-primary);
+            text-transform: uppercase;
+        }
+
+        .tagline-box {
+            text-align: right;
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--bot-accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--bot-accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        .ai-status span {
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .tagline-secondary {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        /* Main Container */
+        .main-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 70px;
+            padding-bottom: 140px;
+        }
+
+        /* 3D Cube Scene */
+        .cube-scene {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            position: relative;
+            cursor: grab;
+        }
+
+        .cube-scene:active {
+            cursor: grabbing;
+        }
+
+        /* Glow effects */
+        .cube-glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: glowPulse 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Cube wrapper */
+        .cube-wrapper {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+
+        .cube-wrapper.animating {
+            transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Cube faces */
+        .cube-face {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            background: linear-gradient(135deg, rgba(10, 15, 30, 0.95) 0%, rgba(5, 8, 15, 0.98) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 14px;
+            backface-visibility: hidden;
+            display: grid;
+            gap: 5px;
+            padding: 10px;
+            box-shadow: 
+                0 0 50px rgba(0, 212, 255, 0.15),
+                inset 0 0 60px rgba(0, 212, 255, 0.03);
+            overflow: hidden;
+        }
+
+        .cube-face.grid-4x3 {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+
+        .cube-face.grid-3x2 {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .cube-face::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--bot-primary), transparent);
+            opacity: 0.5;
+        }
+
+        /* Face positions */
+        .face-front  { transform: translateZ(140px); }
+        .face-back   { transform: rotateY(180deg) translateZ(140px); }
+        .face-right  { transform: rotateY(90deg) translateZ(140px); }
+        .face-left   { transform: rotateY(-90deg) translateZ(140px); }
+        .face-top    { transform: rotateX(90deg) translateZ(140px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(140px); }
+
+        /* Face Labels */
+        .face-label {
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--bot-primary), var(--bot-secondary));
+            padding: 6px 20px;
+            border-radius: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            white-space: nowrap;
+            box-shadow: 0 0 20px var(--bot-glow);
+            pointer-events: none;
+        }
+
+        /* Tiles */
+        .tile {
+            background: linear-gradient(145deg, rgba(20, 35, 60, 0.7), rgba(10, 18, 30, 0.8));
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 4px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tile:hover {
+            border-color: var(--bot-primary);
+            transform: scale(1.1) translateZ(10px);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .tile.highlighted {
+            border-color: var(--bot-accent);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.7);
+            animation: tileHighlight 0.6s ease-out;
+        }
+
+        @keyframes tileHighlight {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) translateZ(20px); }
+            100% { transform: scale(1.1) translateZ(10px); }
+        }
+
+        .tile-icon {
+            font-size: 18px;
+            margin-bottom: 1px;
+            filter: drop-shadow(0 0 6px var(--bot-glow));
+        }
+
+        .tile-title {
+            font-size: 7px;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        /* Environmental face - larger tiles */
+        .cube-face.grid-3x2 .tile {
+            padding: 8px;
+        }
+
+        .cube-face.grid-3x2 .tile-icon {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+
+        .cube-face.grid-3x2 .tile-title {
+            font-size: 10px;
+        }
+
+        /* Bottom Navigation - 7 Tabs */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(0deg, rgba(5, 5, 16, 0.98) 0%, rgba(5, 5, 16, 0.95) 80%, transparent 100%);
+            padding: 15px 20px 20px;
+            z-index: 100;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .nav-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 16px;
+            background: rgba(0, 212, 255, 0.03);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 90px;
+        }
+
+        .nav-tab:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.4);
+            color: #fff;
+            transform: translateY(-3px);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 153, 255, 0.15));
+            border-color: var(--bot-primary);
+            color: #fff;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
+        }
+
+        .nav-tab.tools-tab {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 200, 100, 0.05));
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        .nav-tab.tools-tab:hover {
+            border-color: var(--bot-accent);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .nav-tab.tools-tab.active {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.25), rgba(0, 200, 100, 0.2));
+            border-color: var(--bot-accent);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.4);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        /* AI Chat Interface */
+        .chat-container {
+            position: fixed;
+            bottom: 95px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            z-index: 100;
+        }
+
+        .chat-box {
+            background: linear-gradient(135deg, rgba(10, 15, 30, 0.98) 0%, rgba(5, 8, 15, 0.99) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 12px 18px;
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(0, 212, 255, 0.1);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: var(--bot-primary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-btn {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--bot-primary), var(--bot-secondary));
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px var(--bot-glow);
+        }
+
+        .chat-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px var(--bot-glow);
+        }
+
+        .voice-btn {
+            background: linear-gradient(135deg, var(--bot-accent), #00cc6a);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .voice-btn.listening {
+            animation: voicePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes voicePulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 136, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.8); transform: scale(1.05); }
+        }
+
+        /* AI Response */
+        .ai-response {
+            margin-top: 10px;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.03);
+            border-radius: 10px;
+            border-left: 2px solid var(--bot-primary);
+            display: none;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .ai-response.visible {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ai-thinking {
+            display: flex;
+            gap: 5px;
+            padding: 5px 0;
+        }
+
+        .ai-thinking span {
+            width: 6px;
+            height: 6px;
+            background: var(--bot-primary);
+            border-radius: 50%;
+            animation: thinking 1.4s ease-in-out infinite;
+        }
+
+        .ai-thinking span:nth-child(2) { animation-delay: 0.2s; }
+        .ai-thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes thinking {
+            0%, 100% { transform: translateY(0); opacity: 0.3; }
+            50% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            position: fixed;
+            top: 80px;
+            right: -450px;
+            width: 420px;
+            height: calc(100vh - 180px);
+            background: linear-gradient(180deg, rgba(10, 15, 30, 0.99) 0%, rgba(5, 8, 15, 1) 100%);
+            border-left: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px 0 0 20px;
+            z-index: 200;
+            transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto;
+            box-shadow: -15px 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .detail-panel.open {
+            right: 0;
+        }
+
+        .panel-header {
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .panel-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            background: linear-gradient(90deg, #fff, var(--bot-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .panel-header p {
+            font-size: 11px;
+            opacity: 0.5;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .close-btn {
+            width: 38px;
+            height: 38px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            background: rgba(0, 212, 255, 0.05);
+            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--bot-primary);
+            border-color: var(--bot-primary);
+            transform: rotate(90deg);
+        }
+
+        .panel-content {
+            padding: 25px;
+        }
+
+        .panel-description {
+            margin-bottom: 20px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+
+        .panel-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .panel-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .panel-link:hover {
+            background: rgba(0, 212, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateX(6px);
+        }
+
+        .link-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 212, 255, 0.05));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .link-text strong {
+            display: block;
+            margin-bottom: 2px;
+            font-size: 13px;
+        }
+
+        .link-text span {
+            font-size: 9px;
+            opacity: 0.4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(5, 5, 16, 0.7);
+            z-index: 150;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* Keyboard hints */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.3);
+            z-index: 50;
+        }
+
+        .keyboard-hint kbd {
+            background: rgba(0, 212, 255, 0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div class="particle-container">
+        <div class="particle-gradient"></div>
+        <canvas id="particleCanvas"></canvas>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <div class="logo-ring"></div>
+                <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Robot/Bot head icon -->
+                    <rect x="12" y="15" width="36" height="30" rx="6" stroke="url(#botGradient)" stroke-width="2" fill="none"/>
+                    <circle cx="24" cy="28" r="5" fill="url(#eyeGradient)"/>
+                    <circle cx="36" cy="28" r="5" fill="url(#eyeGradient)"/>
+                    <rect x="20" y="38" width="20" height="3" rx="1.5" fill="url(#botGradient)"/>
+                    <rect x="26" y="8" width="8" height="7" rx="2" stroke="url(#botGradient)" stroke-width="2" fill="none"/>
+                    <circle cx="30" cy="11" r="2" fill="var(--bot-accent)"/>
+                    <defs>
+                        <linearGradient id="botGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#00d4ff"/>
+                            <stop offset="100%" stop-color="#00ff88"/>
+                        </linearGradient>
+                        <radialGradient id="eyeGradient" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#00d4ff"/>
+                            <stop offset="100%" stop-color="#0066aa"/>
+                        </radialGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="logo-text">
+                <h1>BOTMATON</h1>
+                <span class="tagline-primary">Industrial Facility Intelligence</span>
+            </div>
+        </div>
+        <div class="tagline-box">
+            <div class="ai-status">
+                <div class="status-dot"></div>
+                <span>AI Online</span>
+            </div>
+            <p class="tagline-secondary">Automate. Integrate. Elevate.</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="cube-scene" id="cubeScene">
+            <div class="cube-glow"></div>
+            <div class="cube-wrapper" id="cube">
+                <!-- Front: Administration -->
+                <div class="cube-face face-front grid-4x3" data-face="0">
+                    <div class="face-label">Administration</div>
+                </div>
+                <!-- Right: Safety -->
+                <div class="cube-face face-right grid-4x3" data-face="1">
+                    <div class="face-label">Safety</div>
+                </div>
+                <!-- Back: Production -->
+                <div class="cube-face face-back grid-4x3" data-face="2">
+                    <div class="face-label">Production</div>
+                </div>
+                <!-- Left: Maintenance -->
+                <div class="cube-face face-left grid-4x3" data-face="3">
+                    <div class="face-label">Maintenance</div>
+                </div>
+                <!-- Top: Facility Map -->
+                <div class="cube-face face-top grid-4x3" data-face="4">
+                    <div class="face-label">Facility Map</div>
+                </div>
+                <!-- Bottom: Environmental (6 tiles) -->
+                <div class="cube-face face-bottom grid-3x2" data-face="5">
+                    <div class="face-label">Environmental</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chat Interface -->
+    <div class="chat-container">
+        <div class="chat-box">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask Botmaton... 'Show LOTO for Boiler 1'">
+                <button class="chat-btn voice-btn" id="voiceBtn">🎤</button>
+                <button class="chat-btn" id="sendBtn">➤</button>
+            </div>
+            <div class="ai-response" id="aiResponse">
+                <p id="responseText"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-face="4">
+                <span class="nav-icon">🗺️</span>
+                Facility Map
+            </div>
+            <div class="nav-tab" data-face="3">
+                <span class="nav-icon">🔧</span>
+                Maintenance
+            </div>
+            <div class="nav-tab" data-face="2">
+                <span class="nav-icon">🏭</span>
+                Production
+            </div>
+            <div class="nav-tab" data-face="0">
+                <span class="nav-icon">📋</span>
+                Administration
+            </div>
+            <div class="nav-tab" data-face="1">
+                <span class="nav-icon">🦺</span>
+                Safety
+            </div>
+            <div class="nav-tab" data-face="5">
+                <span class="nav-icon">🌿</span>
+                Environmental
+            </div>
+            <div class="nav-tab tools-tab" data-face="tools">
+                <span class="nav-icon">⚙️</span>
+                Tools
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Hint -->
+    <div class="keyboard-hint">
+        <kbd>🖱️</kbd> Drag <kbd>↔</kbd> Navigate <kbd>Esc</kbd> Close
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Detail Panel -->
+    <div class="detail-panel" id="detailPanel">
+        <div class="panel-header">
+            <div>
+                <h2 id="panelTitle">Title</h2>
+                <p id="panelSubtitle">Subtitle</p>
+            </div>
+            <button class="close-btn" id="closePanel">✕</button>
+        </div>
+        <div class="panel-content">
+            <p class="panel-description" id="panelDescription"></p>
+            <div class="panel-links" id="panelLinks"></div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // Botmaton Data - Generic Industrial Examples
+        // ========================================
+        const cubeData = {
+            faces: [
+                {
+                    name: "Administration",
+                    gridClass: "grid-4x3",
+                    keywords: ["admin", "hr", "employee", "handbook", "forms", "payroll"],
+                    tiles: [
+                        { id: "company", icon: "🏢", title: "Company", subtitle: "Portal", description: "Company resources and information.", links: [{ label: "Company Website", url: "#", type: "link" }] },
+                        { id: "handbook", icon: "📘", title: "Handbook", subtitle: "Policies", description: "Employee handbook and policies.", links: [{ label: "Employee Handbook", url: "#", type: "pdf" }] },
+                        { id: "forms", icon: "📝", title: "Forms", subtitle: "Admin", description: "Administrative forms library.", links: [{ label: "Employee Application", url: "#", type: "form" }, { label: "Time Off Request", url: "#", type: "form" }] },
+                        { id: "directory", icon: "📇", title: "Directory", subtitle: "Contacts", description: "Employee contact directory.", links: [{ label: "Company Directory", url: "#", type: "pdf" }] },
+                        { id: "documents", icon: "📄", title: "Documents", subtitle: "Files", description: "Document library and archives.", links: [{ label: "Document Library", url: "#", type: "folder" }] },
+                        { id: "manuals", icon: "📚", title: "Manuals", subtitle: "Reference", description: "Company manuals and guides.", links: [{ label: "Operations Manual", url: "#", type: "pdf" }] },
+                        { id: "erp", icon: "💻", title: "ERP", subtitle: "System", description: "Enterprise resource planning.", links: [{ label: "ERP Login", url: "#", type: "external" }] },
+                        { id: "employment", icon: "👤", title: "Employment", subtitle: "Jobs", description: "Job applications and careers.", links: [{ label: "Apply Online", url: "#", type: "form" }] },
+                        { id: "charts", icon: "📊", title: "Org Chart", subtitle: "Structure", description: "Organization structure.", links: [{ label: "Org Chart", url: "#", type: "doc" }] },
+                        { id: "payroll", icon: "💰", title: "Payroll", subtitle: "System", description: "Payroll management system.", links: [{ label: "Payroll Login", url: "#", type: "external" }] },
+                        { id: "benefits", icon: "🎁", title: "Benefits", subtitle: "HR", description: "Employee benefits information.", links: [{ label: "Benefits Info", url: "#", type: "pdf" }] },
+                        { id: "policies", icon: "📜", title: "Policies", subtitle: "Rules", description: "Company policies and procedures.", links: [{ label: "Policy Manual", url: "#", type: "pdf" }] }
+                    ]
+                },
+                {
+                    name: "Safety",
+                    gridClass: "grid-4x3",
+                    keywords: ["safety", "loto", "lockout", "tagout", "incident", "jsa", "training", "osha", "ppe"],
+                    tiles: [
+                        { id: "loto", icon: "🔒", title: "LOTO", subtitle: "Lockout", description: "Lockout/Tagout energy control procedures.", links: [{ label: "LOTO Procedures", url: "#", type: "map" }, { label: "MCC Diagrams", url: "#", type: "folder" }, { label: "Boiler 1 LOTO", url: "#", type: "pdf" }, { label: "Compressor LOTO", url: "#", type: "pdf" }] },
+                        { id: "jsa", icon: "📋", title: "JSA's", subtitle: "Job Safety", description: "Job Safety Analysis library.", links: [{ label: "JSA Library", url: "#", type: "folder" }] },
+                        { id: "incident", icon: "🚨", title: "Incidents", subtitle: "Reports", description: "Incident reporting system.", links: [{ label: "Report Incident", url: "#", type: "form" }] },
+                        { id: "training", icon: "🎓", title: "Training", subtitle: "Safety", description: "Safety training materials.", links: [{ label: "Training Courses", url: "#", type: "folder" }] },
+                        { id: "sds", icon: "☣️", title: "SDS", subtitle: "Chemicals", description: "Safety Data Sheets database.", links: [{ label: "SDS Database", url: "#", type: "folder" }] },
+                        { id: "ppe", icon: "🥽", title: "PPE", subtitle: "Equipment", description: "PPE requirements by area.", links: [{ label: "PPE Matrix", url: "#", type: "doc" }] },
+                        { id: "emergency", icon: "🚒", title: "Emergency", subtitle: "Response", description: "Emergency action plans.", links: [{ label: "Emergency Action Plan", url: "#", type: "pdf" }] },
+                        { id: "firstaid", icon: "🏥", title: "First Aid", subtitle: "Medical", description: "First aid stations and resources.", links: [{ label: "First Aid Stations", url: "#", type: "map" }] },
+                        { id: "osha", icon: "🏛️", title: "OSHA", subtitle: "Compliance", description: "OSHA compliance records.", links: [{ label: "OSHA 300 Log", url: "#", type: "pdf" }] },
+                        { id: "audit", icon: "✅", title: "Audits", subtitle: "Inspections", description: "Safety audits and inspections.", links: [{ label: "Audit Checklist", url: "#", type: "form" }] },
+                        { id: "meetings", icon: "👥", title: "Meetings", subtitle: "Safety", description: "Safety meeting records.", links: [{ label: "Meeting Minutes", url: "#", type: "folder" }] },
+                        { id: "program", icon: "🦺", title: "Program", subtitle: "Overview", description: "Safety program overview.", links: [{ label: "Safety Manual", url: "#", type: "pdf" }] }
+                    ]
+                },
+                {
+                    name: "Production",
+                    gridClass: "grid-4x3",
+                    keywords: ["production", "schedule", "quality", "inventory", "shipping", "metrics"],
+                    tiles: [
+                        { id: "dashboard", icon: "📊", title: "Dashboard", subtitle: "Live", description: "Real-time production dashboard.", links: [{ label: "Live Dashboard", url: "#", type: "link" }] },
+                        { id: "schedule", icon: "📅", title: "Schedule", subtitle: "Planning", description: "Production schedule and planning.", links: [{ label: "Weekly Schedule", url: "#", type: "doc" }] },
+                        { id: "quality", icon: "✅", title: "Quality", subtitle: "QC/QA", description: "Quality control procedures.", links: [{ label: "Quality Manual", url: "#", type: "pdf" }] },
+                        { id: "inventory", icon: "📦", title: "Inventory", subtitle: "Stock", description: "Inventory tracking system.", links: [{ label: "Inventory System", url: "#", type: "link" }] },
+                        { id: "shipping", icon: "🚚", title: "Shipping", subtitle: "Logistics", description: "Shipping and logistics.", links: [{ label: "Shipping Schedule", url: "#", type: "doc" }] },
+                        { id: "reports", icon: "📈", title: "Reports", subtitle: "Data", description: "Production reports archive.", links: [{ label: "Daily Reports", url: "#", type: "folder" }] },
+                        { id: "sops", icon: "⚡", title: "SOPs", subtitle: "Procedures", description: "Standard operating procedures.", links: [{ label: "SOP Library", url: "#", type: "folder" }] },
+                        { id: "metrics", icon: "🎯", title: "KPIs", subtitle: "Metrics", description: "Key performance indicators.", links: [{ label: "KPI Dashboard", url: "#", type: "link" }] },
+                        { id: "video", icon: "📹", title: "Cameras", subtitle: "Live", description: "Live camera feeds.", links: [{ label: "Camera System", url: "#", type: "link" }] },
+                        { id: "logs", icon: "📝", title: "Logs", subtitle: "History", description: "Production logs archive.", links: [{ label: "Log Archive", url: "#", type: "folder" }] },
+                        { id: "downtime", icon: "⏱️", title: "Downtime", subtitle: "Tracking", description: "Downtime tracking system.", links: [{ label: "Downtime Log", url: "#", type: "doc" }] },
+                        { id: "erp-prod", icon: "💻", title: "ERP", subtitle: "System", description: "ERP production module.", links: [{ label: "ERP Login", url: "#", type: "external" }] }
+                    ]
+                },
+                {
+                    name: "Maintenance",
+                    gridClass: "grid-4x3",
+                    keywords: ["maintenance", "cmms", "pm", "work order", "equipment", "parts", "vendor"],
+                    tiles: [
+                        { id: "cmms", icon: "🔧", title: "CMMS", subtitle: "System", description: "Computerized maintenance management.", links: [{ label: "Open CMMS", url: "#", type: "external" }, { label: "Work Orders", url: "#", type: "link" }] },
+                        { id: "workorders", icon: "📋", title: "Work Orders", subtitle: "Tasks", description: "Work order management.", links: [{ label: "New Work Order", url: "#", type: "form" }] },
+                        { id: "pms", icon: "🔄", title: "PM's", subtitle: "Preventive", description: "Preventive maintenance schedule.", links: [{ label: "PM Calendar", url: "#", type: "doc" }] },
+                        { id: "equipment", icon: "⚙️", title: "Equipment", subtitle: "Assets", description: "Equipment registry.", links: [{ label: "Equipment List", url: "#", type: "doc" }] },
+                        { id: "parts", icon: "🔩", title: "Parts", subtitle: "Inventory", description: "Parts inventory system.", links: [{ label: "Parts Inventory", url: "#", type: "link" }] },
+                        { id: "vendors", icon: "🏪", title: "Vendors", subtitle: "Suppliers", description: "Vendor contact list.", links: [{ label: "Vendor List", url: "#", type: "doc" }] },
+                        { id: "schematics", icon: "📐", title: "Schematics", subtitle: "Drawings", description: "Technical drawings.", links: [{ label: "Electrical", url: "#", type: "folder" }, { label: "P&IDs", url: "#", type: "folder" }] },
+                        { id: "manuals-maint", icon: "📖", title: "Manuals", subtitle: "Tech Docs", description: "Equipment manuals library.", links: [{ label: "Manual Library", url: "#", type: "folder" }] },
+                        { id: "history", icon: "📜", title: "History", subtitle: "Log", description: "Maintenance history records.", links: [{ label: "Maintenance History", url: "#", type: "folder" }] },
+                        { id: "calibration", icon: "🎚️", title: "Calibration", subtitle: "Instruments", description: "Calibration schedule.", links: [{ label: "Cal Schedule", url: "#", type: "doc" }] },
+                        { id: "utilities", icon: "💡", title: "Utilities", subtitle: "Systems", description: "Utility systems overview.", links: [{ label: "Electrical Systems", url: "#", type: "map" }] },
+                        { id: "facilities", icon: "🏗️", title: "Facilities", subtitle: "Buildings", description: "Building maintenance.", links: [{ label: "Facility Map", url: "#", type: "map" }] }
+                    ]
+                },
+                {
+                    name: "Facility Map",
+                    gridClass: "grid-4x3",
+                    keywords: ["map", "site", "building", "location", "area"],
+                    tiles: [
+                        { id: "sitemap", icon: "🗺️", title: "Site Map", subtitle: "Overview", description: "Complete facility overview.", links: [{ label: "Interactive Map", url: "#", type: "map" }] },
+                        { id: "building-a", icon: "🏭", title: "Building A", subtitle: "Main", description: "Main production building.", links: [{ label: "Floor Plan", url: "#", type: "map" }] },
+                        { id: "building-b", icon: "🏢", title: "Building B", subtitle: "Admin", description: "Administration building.", links: [{ label: "Floor Plan", url: "#", type: "map" }] },
+                        { id: "warehouse", icon: "📦", title: "Warehouse", subtitle: "Storage", description: "Warehouse and storage.", links: [{ label: "Layout", url: "#", type: "map" }] },
+                        { id: "boiler", icon: "🔥", title: "Boiler Room", subtitle: "Utilities", description: "Boiler and steam systems.", links: [{ label: "P&ID", url: "#", type: "map" }, { label: "LOTO", url: "#", type: "pdf" }] },
+                        { id: "compressor", icon: "💨", title: "Compressor", subtitle: "Air", description: "Compressed air systems.", links: [{ label: "Equipment", url: "#", type: "map" }, { label: "LOTO", url: "#", type: "pdf" }] },
+                        { id: "cooling", icon: "❄️", title: "Cooling Tower", subtitle: "HVAC", description: "Cooling systems.", links: [{ label: "P&ID", url: "#", type: "map" }] },
+                        { id: "electrical", icon: "⚡", title: "Electrical", subtitle: "MCC", description: "Main electrical rooms.", links: [{ label: "One-Line", url: "#", type: "map" }] },
+                        { id: "shipping-area", icon: "🚛", title: "Shipping", subtitle: "Dock", description: "Shipping and receiving.", links: [{ label: "Layout", url: "#", type: "map" }] },
+                        { id: "maint-shop", icon: "🔧", title: "Maint Shop", subtitle: "Workshop", description: "Maintenance workshop.", links: [{ label: "Layout", url: "#", type: "map" }] },
+                        { id: "underground", icon: "🕳️", title: "Underground", subtitle: "Utilities", description: "Underground utilities.", links: [{ label: "Utility Map", url: "#", type: "map" }] },
+                        { id: "parking", icon: "🅿️", title: "Parking", subtitle: "Exterior", description: "Parking and exterior.", links: [{ label: "Site Plan", url: "#", type: "map" }] }
+                    ]
+                },
+                {
+                    name: "Environmental",
+                    gridClass: "grid-3x2",
+                    keywords: ["environmental", "permit", "air", "water", "waste", "emissions", "compliance"],
+                    tiles: [
+                        { id: "air", icon: "💨", title: "Air Quality", subtitle: "Emissions", description: "Air Operating Permits, emissions data, and monitoring records.", links: [{ label: "Air Operating Permit", url: "#", type: "pdf" }, { label: "Emissions Data", url: "#", type: "doc" }, { label: "Monitoring Records", url: "#", type: "folder" }] },
+                        { id: "water", icon: "💧", title: "Water Quality", subtitle: "Discharge", description: "NPDES permits, discharge monitoring, and water quality data.", links: [{ label: "NPDES Permit", url: "#", type: "pdf" }, { label: "DMR Reports", url: "#", type: "folder" }] },
+                        { id: "hazwaste", icon: "☣️", title: "Haz Waste", subtitle: "Disposal", description: "Hazardous waste manifests and disposal records.", links: [{ label: "Waste Manifests", url: "#", type: "folder" }, { label: "Disposal Records", url: "#", type: "folder" }] },
+                        { id: "permits", icon: "📜", title: "Permits", subtitle: "Library", description: "Complete permit library - all regulatory permits.", links: [{ label: "Permit Library", url: "#", type: "folder" }] },
+                        { id: "regulations", icon: "📚", title: "Regulations", subtitle: "Reference", description: "EPA, state, and local regulatory references.", links: [{ label: "EPA Regulations", url: "#", type: "folder" }, { label: "State Regs", url: "#", type: "folder" }] },
+                        { id: "reporting", icon: "📊", title: "Reporting", subtitle: "Compliance", description: "Annual reports and compliance documentation.", links: [{ label: "Annual Reports", url: "#", type: "folder" }, { label: "Compliance Docs", url: "#", type: "folder" }] }
+                    ]
+                }
+            ]
+        };
+
+        // ========================================
+        // Particle Network Background
+        // ========================================
+        class ParticleNetwork {
+            constructor() {
+                this.canvas = document.getElementById('particleCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.resize();
+                this.init();
+                this.animate();
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            init() {
+                const particleCount = Math.floor((this.canvas.width * this.canvas.height) / 15000);
+                for (let i = 0; i < particleCount; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        radius: Math.random() * 2 + 1
+                    });
+                }
+            }
+
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Update and draw particles
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Bounce off edges
+                    if (p.x < 0 || p.x > this.canvas.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > this.canvas.height) p.vy *= -1;
+
+                    // Draw particle
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
+                    this.ctx.fill();
+                });
+
+                // Draw connections
+                for (let i = 0; i < this.particles.length; i++) {
+                    for (let j = i + 1; j < this.particles.length; j++) {
+                        const dx = this.particles[i].x - this.particles[j].x;
+                        const dy = this.particles[i].y - this.particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < 150) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
+                            this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
+                            this.ctx.strokeStyle = `rgba(0, 212, 255, ${0.2 * (1 - dist / 150)})`;
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // ========================================
+        // Botmaton Cube Controller
+        // ========================================
+        class BotmatonCube {
+            constructor() {
+                this.cube = document.getElementById('cube');
+                this.cubeScene = document.getElementById('cubeScene');
+                this.currentFace = 4;
+                this.detailPanel = document.getElementById('detailPanel');
+                this.overlay = document.getElementById('overlay');
+                this.chatInput = document.getElementById('chatInput');
+                this.aiResponse = document.getElementById('aiResponse');
+                this.responseText = document.getElementById('responseText');
+                this.isListening = false;
+
+                this.isDragging = false;
+                this.previousMouseX = 0;
+                this.previousMouseY = 0;
+                this.rotationX = -98;
+                this.rotationY = 0;
+                this.momentum = { x: 0, y: 0 };
+
+                this.faceRotations = [
+                    { x: -8, y: 0 },
+                    { x: -8, y: -90 },
+                    { x: -8, y: -180 },
+                    { x: -8, y: -270 },
+                    { x: -98, y: 0 },
+                    { x: 82, y: 0 }
+                ];
+
+                this.init();
+            }
+
+            init() {
+                this.renderTiles();
+                this.bindEvents();
+                this.updateCubeRotation();
+                this.updateNavTabs();
+                new ParticleNetwork();
+            }
+
+            renderTiles() {
+                const faces = document.querySelectorAll('.cube-face');
+                faces.forEach((face, faceIndex) => {
+                    if (cubeData.faces[faceIndex]) {
+                        const faceData = cubeData.faces[faceIndex];
+                        faceData.tiles.forEach(tile => {
+                            const tileEl = document.createElement('div');
+                            tileEl.className = 'tile';
+                            tileEl.dataset.tileId = tile.id;
+                            tileEl.dataset.faceIndex = faceIndex;
+                            tileEl.innerHTML = `
+                                <span class="tile-icon">${tile.icon}</span>
+                                <span class="tile-title">${tile.title}</span>
+                            `;
+                            tileEl.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                if (!this.isDragging) this.openPanel(tile);
+                            });
+                            face.appendChild(tileEl);
+                        });
+                    }
+                });
+            }
+
+            bindEvents() {
+                this.cubeScene.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                document.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                document.addEventListener('mouseup', () => this.onMouseUp());
+                
+                this.cubeScene.addEventListener('touchstart', (e) => this.onTouchStart(e));
+                document.addEventListener('touchmove', (e) => this.onTouchMove(e));
+                document.addEventListener('touchend', () => this.onTouchEnd());
+
+                document.addEventListener('keydown', (e) => {
+                    if (document.activeElement === this.chatInput) {
+                        if (e.key === 'Enter') this.processQuery(this.chatInput.value);
+                        return;
+                    }
+                    if (e.key === 'ArrowLeft') this.rotateTo((this.currentFace + 3) % 4);
+                    if (e.key === 'ArrowRight') this.rotateTo((this.currentFace + 1) % 4);
+                    if (e.key === 'ArrowUp') this.rotateTo(4);
+                    if (e.key === 'ArrowDown') this.rotateTo(5);
+                    if (e.key === 'Escape') this.closePanel();
+                });
+
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const face = tab.dataset.face;
+                        if (face === 'tools') {
+                            this.showToolsPanel();
+                        } else {
+                            this.rotateTo(parseInt(face));
+                        }
+                    });
+                });
+
+                document.getElementById('sendBtn').addEventListener('click', () => this.processQuery(this.chatInput.value));
+                this.chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.processQuery(this.chatInput.value); });
+                document.getElementById('voiceBtn').addEventListener('click', () => this.toggleVoice());
+                document.getElementById('closePanel').addEventListener('click', () => this.closePanel());
+                this.overlay.addEventListener('click', () => this.closePanel());
+
+                this.animateMomentum();
+            }
+
+            onMouseDown(e) {
+                if (e.target.closest('.tile')) return;
+                this.isDragging = true;
+                this.previousMouseX = e.clientX;
+                this.previousMouseY = e.clientY;
+                this.momentum = { x: 0, y: 0 };
+            }
+
+            onMouseMove(e) {
+                if (!this.isDragging) return;
+                const deltaX = e.clientX - this.previousMouseX;
+                const deltaY = e.clientY - this.previousMouseY;
+                this.rotationY += deltaX * 0.5;
+                this.rotationX -= deltaY * 0.5;
+                this.rotationX = Math.max(-90, Math.min(90, this.rotationX));
+                this.momentum.x = deltaY * 0.5;
+                this.momentum.y = deltaX * 0.5;
+                this.previousMouseX = e.clientX;
+                this.previousMouseY = e.clientY;
+                this.updateCubeRotation();
+            }
+
+            onMouseUp() {
+                this.isDragging = false;
+            }
+
+            onTouchStart(e) {
+                if (e.target.closest('.tile')) return;
+                const touch = e.touches[0];
+                this.isDragging = true;
+                this.previousMouseX = touch.clientX;
+                this.previousMouseY = touch.clientY;
+            }
+
+            onTouchMove(e) {
+                if (!this.isDragging) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - this.previousMouseX;
+                const deltaY = touch.clientY - this.previousMouseY;
+                this.rotationY += deltaX * 0.5;
+                this.rotationX -= deltaY * 0.5;
+                this.rotationX = Math.max(-90, Math.min(90, this.rotationX));
+                this.previousMouseX = touch.clientX;
+                this.previousMouseY = touch.clientY;
+                this.updateCubeRotation();
+            }
+
+            onTouchEnd() {
+                this.isDragging = false;
+            }
+
+            animateMomentum() {
+                if (!this.isDragging && (Math.abs(this.momentum.x) > 0.1 || Math.abs(this.momentum.y) > 0.1)) {
+                    this.rotationX -= this.momentum.x;
+                    this.rotationY += this.momentum.y;
+                    this.rotationX = Math.max(-90, Math.min(90, this.rotationX));
+                    this.momentum.x *= 0.95;
+                    this.momentum.y *= 0.95;
+                    this.updateCubeRotation();
+                }
+                requestAnimationFrame(() => this.animateMomentum());
+            }
+
+            rotateTo(faceIndex) {
+                this.currentFace = faceIndex;
+                const r = this.faceRotations[faceIndex];
+                this.rotationX = r.x;
+                this.rotationY = r.y;
+                this.cube.classList.add('animating');
+                this.updateCubeRotation();
+                this.updateNavTabs();
+                setTimeout(() => this.cube.classList.remove('animating'), 1200);
+            }
+
+            updateCubeRotation() {
+                this.cube.style.transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`;
+            }
+
+            updateNavTabs() {
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    const face = tab.dataset.face;
+                    if (face === 'tools') {
+                        tab.classList.remove('active');
+                    } else {
+                        tab.classList.toggle('active', parseInt(face) === this.currentFace);
+                    }
+                });
+            }
+
+            showToolsPanel() {
+                const toolsData = {
+                    title: "Botmaton Tools",
+                    subtitle: "Authoring & Configuration",
+                    description: "Create and manage your facility data with Botmaton Tools. Build facility hierarchies, configure the cube, import equipment, and create LOTO procedures.",
+                    links: [
+                        { label: "Cube Configurator", url: "#", type: "tool", icon: "🎛️" },
+                        { label: "Facility Builder", url: "#", type: "tool", icon: "🏗️" },
+                        { label: "Hotspot Editor", url: "#", type: "tool", icon: "📍" },
+                        { label: "Equipment Importer", url: "#", type: "tool", icon: "📥" },
+                        { label: "LOTO Procedure Builder", url: "#", type: "tool", icon: "🔒" },
+                        { label: "Document Linker", url: "#", type: "tool", icon: "🔗" },
+                        { label: "Settings", url: "#", type: "tool", icon: "⚙️" }
+                    ]
+                };
+                this.openPanel(toolsData);
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.face === 'tools');
+                });
+            }
+
+            processQuery(query) {
+                if (!query.trim()) return;
+                this.aiResponse.classList.add('visible');
+                this.responseText.innerHTML = '<div class="ai-thinking"><span></span><span></span><span></span></div>';
+
+                setTimeout(() => {
+                    const result = this.findBestMatch(query.toLowerCase());
+                    if (result.face !== null) {
+                        this.rotateTo(result.face);
+                        setTimeout(() => {
+                            if (result.tile) this.highlightTile(result.tile, result.face);
+                            this.responseText.innerHTML = result.response;
+                            if (result.tileData) setTimeout(() => this.openPanel(result.tileData), 800);
+                        }, 700);
+                    } else {
+                        this.responseText.innerHTML = result.response;
+                    }
+                }, 1000);
+                this.chatInput.value = '';
+            }
+
+            findBestMatch(query) {
+                const equipmentMap = {
+                    'boiler': { face: 4, tile: 'boiler' },
+                    'compressor': { face: 4, tile: 'compressor' },
+                    'cooling': { face: 4, tile: 'cooling' },
+                    'warehouse': { face: 4, tile: 'warehouse' },
+                    'building a': { face: 4, tile: 'building-a' },
+                    'building b': { face: 4, tile: 'building-b' }
+                };
+
+                for (const [key, value] of Object.entries(equipmentMap)) {
+                    if (query.includes(key)) {
+                        const tileData = cubeData.faces[value.face].tiles.find(t => t.id === value.tile);
+                        if (query.includes('loto') || query.includes('lockout')) {
+                            return {
+                                face: 1, tile: 'loto',
+                                tileData: cubeData.faces[1].tiles.find(t => t.id === 'loto'),
+                                response: `🔒 <strong>Botmaton found</strong> LOTO procedures for <strong>${key}</strong>.`
+                            };
+                        }
+                        return { face: value.face, tile: value.tile, tileData, response: `🗺️ Navigating to <strong>${tileData ? tileData.title : key}</strong>.` };
+                    }
+                }
+
+                if (query.includes('environmental') || query.includes('permit') || query.includes('air') || query.includes('water') || query.includes('waste')) {
+                    return { face: 5, tile: null, tileData: null, response: `🌿 Opening <strong>Environmental</strong> section.` };
+                }
+                if (query.includes('loto') || query.includes('lockout') || query.includes('safety')) {
+                    return { face: 1, tile: 'loto', tileData: cubeData.faces[1].tiles.find(t => t.id === 'loto'), response: `🔒 Opening <strong>Safety</strong> - LOTO procedures.` };
+                }
+                if (query.includes('maintenance') || query.includes('work order') || query.includes('cmms')) {
+                    return { face: 3, tile: 'cmms', tileData: cubeData.faces[3].tiles.find(t => t.id === 'cmms'), response: `🔧 Opening <strong>Maintenance</strong> - CMMS.` };
+                }
+                if (query.includes('production') || query.includes('schedule')) {
+                    return { face: 2, tile: null, tileData: null, response: `🏭 Opening <strong>Production</strong>.` };
+                }
+                if (query.includes('map') || query.includes('facility') || query.includes('building')) {
+                    return { face: 4, tile: 'sitemap', tileData: cubeData.faces[4].tiles[0], response: `🗺️ Opening <strong>Facility Map</strong>.` };
+                }
+                if (query.includes('admin') || query.includes('hr') || query.includes('handbook')) {
+                    return { face: 0, tile: null, tileData: null, response: `📋 Opening <strong>Administration</strong>.` };
+                }
+                if (query.includes('tools') || query.includes('settings') || query.includes('config')) {
+                    this.showToolsPanel();
+                    return { face: null, tile: null, tileData: null, response: `⚙️ Opening <strong>Botmaton Tools</strong>.` };
+                }
+
+                return { face: null, tile: null, tileData: null, response: `🤖 Try: LOTO, safety, maintenance, production, environmental, facility map, or tools.` };
+            }
+
+            highlightTile(tileId, faceIndex) {
+                document.querySelectorAll('.tile.highlighted').forEach(t => t.classList.remove('highlighted'));
+                const tile = document.querySelector(`.tile[data-tile-id="${tileId}"][data-face-index="${faceIndex}"]`);
+                if (tile) {
+                    tile.classList.add('highlighted');
+                    setTimeout(() => tile.classList.remove('highlighted'), 3000);
+                }
+            }
+
+            toggleVoice() {
+                const voiceBtn = document.getElementById('voiceBtn');
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.responseText.innerHTML = '🎤 Voice not supported. Try Chrome!';
+                    this.aiResponse.classList.add('visible');
+                    return;
+                }
+                if (this.isListening) {
+                    this.recognition.stop();
+                    return;
+                }
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognition = new SpeechRecognition();
+                this.recognition.continuous = false;
+                this.recognition.onstart = () => { voiceBtn.classList.add('listening'); this.isListening = true; };
+                this.recognition.onresult = (e) => { this.chatInput.value = e.results[0][0].transcript; this.processQuery(e.results[0][0].transcript); };
+                this.recognition.onend = () => { voiceBtn.classList.remove('listening'); this.isListening = false; };
+                this.recognition.start();
+            }
+
+            openPanel(data) {
+                document.getElementById('panelTitle').textContent = data.title;
+                document.getElementById('panelSubtitle').textContent = data.subtitle;
+                document.getElementById('panelDescription').textContent = data.description;
+                const linksContainer = document.getElementById('panelLinks');
+                linksContainer.innerHTML = '';
+                const iconMap = { 'pdf': '📄', 'doc': '📝', 'folder': '📁', 'form': '📋', 'link': '🔗', 'external': '🌐', 'map': '🗺️', 'tool': '🛠️' };
+                data.links.forEach(link => {
+                    const el = document.createElement('a');
+                    el.className = 'panel-link';
+                    el.href = link.url;
+                    el.innerHTML = `
+                        <span class="link-icon">${link.icon || iconMap[link.type] || '📎'}</span>
+                        <span class="link-text"><strong>${link.label}</strong><span>${link.type.toUpperCase()}</span></span>
+                    `;
+                    linksContainer.appendChild(el);
+                });
+                this.detailPanel.classList.add('open');
+                this.overlay.classList.add('open');
+            }
+
+            closePanel() {
+                this.detailPanel.classList.remove('open');
+                this.overlay.classList.remove('open');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => new BotmatonCube());
+    </script>
+</body>
+</html>
