@@ -2,7 +2,7 @@
 
 **Industrial Facility Intelligence Platform**
 
-*Automate. Integrate. Elevate.*
+*Powered by Aura AI*
 
 ---
 
@@ -10,9 +10,13 @@
 
 Botmaton is an AI-powered industrial facility management platform featuring a 3D cube interface for intuitive navigation of facility documentation, safety procedures, maintenance systems, and environmental compliance.
 
+**Aura** is Botmaton's intelligent voice assistant — she responds to natural language queries with audio-reactive visuals that bring the interface to life.
+
 ## 🔗 Live Demo
 
-**[Try Botmaton Live →](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v1.html)**
+**[🌟 Try Botmaton with Aura →](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v2-aura.html)**
+
+> 💡 **Tip**: Type "Hello" to meet Aura, or try "Show me LOTO for Boiler 1"
 
 ## ✨ Features
 
@@ -22,10 +26,17 @@ Botmaton is an AI-powered industrial facility management platform featuring a 3D
 - **Click Tiles** - Access documents, procedures, and tools
 - **Smooth Animations** - Professional transitions
 
-### 🗣️ AI-Powered Navigation
+### 🌟 Aura - Voice AI Assistant
 - **Natural Language Queries** - "Show me LOTO for Boiler 1"
-- **Voice Commands** - Hands-free operation (Chrome)
-- **Smart Routing** - AI finds the right content
+- **Voice Input/Output** - Hands-free operation (Chrome)
+- **Time-Based Greetings** - Good morning/afternoon/evening
+- **Audio-Reactive Visuals** - Cube glows and pulses with Aura's voice
+
+### 🔊 Audio-Reactive Elements
+- Cube glow expands during speech
+- Particle network speeds up and changes color
+- Visualizer bars dance with the voice
+- Status indicator shows "Aura Speaking..."
 
 ### 📦 The 6 Faces
 
@@ -43,15 +54,14 @@ Botmaton is an AI-powered industrial facility management platform featuring a 3D
 - **Facility Builder** - Create hierarchical facility structures
 - **LOTO Procedure Builder** - Design lockout/tagout procedures
 - **Equipment Importer** - Bulk upload equipment data
-- **Document Linker** - Connect documents to assets
 
 ## 🚀 Quick Start
 
-1. Clone this repository
-2. Open `prototypes/botmaton-v1.html` in a browser
+1. Visit the [Live Demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v2-aura.html)
+2. Type "Hello" to meet Aura
 3. Drag the cube to explore
 4. Click tiles to see content panels
-5. Try the chat: "Show me safety training"
+5. Try voice input with the 🎤 button (Chrome)
 
 ## 💻 Technology Stack
 
@@ -60,7 +70,7 @@ Botmaton is an AI-powered industrial facility management platform featuring a 3D
 | **Frontend** | HTML5, CSS3, JavaScript |
 | **3D Engine** | CSS 3D Transforms |
 | **Background** | Canvas Particle Network |
-| **Voice** | Web Speech API |
+| **Voice I/O** | Web Speech API |
 | **Fonts** | Google Fonts (Orbitron, Rajdhani, Exo 2) |
 
 ## 📁 Project Structure
@@ -68,26 +78,19 @@ Botmaton is an AI-powered industrial facility management platform featuring a 3D
 ```
 botmaton/
 ├── prototypes/
-│   └── botmaton-v1.html      # Main prototype
+│   ├── botmaton-v2-aura.html  # Current version with Aura
+│   └── botmaton-v1.html       # Original prototype
 ├── docs/
-│   └── architecture/
-├── templates/
+│   └── README.md
+├── LICENSE
 └── README.md
 ```
 
-## 🎨 Customization
-
-The cube configuration is defined in JavaScript and supports:
-
-- Custom face names and icons
-- Flexible tile layouts (4x3, 3x2, etc.)
-- Multiple link types per tile
-- Color theming via CSS variables
-
 ## 🔮 Roadmap
 
+- [ ] ElevenLabs voice integration (premium TTS)
+- [ ] Local AI backend (Ollama)
 - [ ] Database backend (PostgreSQL)
-- [ ] Local AI integration (Ollama)
 - [ ] Cube Configurator tool
 - [ ] Interactive facility mapping
 - [ ] CMMS module (Botmaton Maintenance)
@@ -103,4 +106,5 @@ Created by Vernon Buchanan
 
 ---
 
-**Botmaton** - *Industrial Facility Intelligence* 🤖
+**Botmaton** - *Industrial Facility Intelligence* 🤖  
+**Aura** - *Adaptive Universal Response Agent* 🌟
