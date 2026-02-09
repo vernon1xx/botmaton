@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botmaton v3.1 - Aura AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;800&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bot-primary: #00d4ff; --bot-secondary: #0099ff; --bot-accent: #00ff88; --bot-glow: rgba(0,212,255,0.5); --bot-dark: #0a0a1a; --bot-darker: #050510; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--bot-darker); min-height: 100vh; overflow: hidden; color: #fff; }
+        .particle-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .particle-gradient { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 20% 20%, rgba(50,0,100,0.3) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(0,50,100,0.3) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, #0a0a1a 0%, #020208 100%); }
+        canvas#particleCanvas { position: absolute; top: 0; left: 0; }
+        .header { position: fixed; top: 0; left: 0; right: 0; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(5,5,16,0.95) 0%, transparent 100%); z-index: 100; }
+        .logo { display: flex; align-items: center; gap: 15px; }
+        .logo-icon { position: relative; width: 50px; height: 50px; }
+        .logo-icon svg { width: 100%; height: 100%; }
+        .logo-ring { position: absolute; top: -4px; left: -4px; width: 58px; height: 58px; border: 2px solid var(--bot-primary); border-radius: 50%; border-top-color: transparent; animation: spin 3s linear infinite; }
+        .logo-ring.speaking { border-color: var(--bot-accent); border-top-color: transparent; animation-duration: 0.5s; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .logo-text h1 { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: 4px; background: linear-gradient(135deg, #fff, var(--bot-primary), var(--bot-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-text .tagline { font-family: 'Exo 2', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--bot-primary); text-transform: uppercase; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .tour-btn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,212,255,0.1)); border: 1px solid rgba(0,255,136,0.4); border-radius: 25px; color: #fff; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; }
+        .tour-btn:hover { background: linear-gradient(135deg, rgba(0,255,136,0.25), rgba(0,212,255,0.2)); transform: translateY(-2px); }
+        .tour-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .skip-tour-btn { display: none; align-items: center; gap: 8px; padding: 10px 18px; background: linear-gradient(135deg, rgba(255,100,100,0.2), rgba(255,50,50,0.1)); border: 1px solid rgba(255,100,100,0.5); border-radius: 25px; color: #ff6b6b; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; }
+        .skip-tour-btn:hover { background: linear-gradient(135deg, rgba(255,100,100,0.3), rgba(255,50,50,0.2)); transform: translateY(-2px); }
+        .skip-tour-btn.visible { display: flex; }
+        .voice-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); border-radius: 20px; cursor: pointer; }
+        .voice-toggle.enabled { background: rgba(0,255,136,0.1); border-color: var(--bot-accent); }
+        .voice-toggle span { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+        .toggle-switch { width: 36px; height: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; position: relative; }
+        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: 0.3s; }
+        .voice-toggle.enabled .toggle-switch { background: var(--bot-accent); }
+        .voice-toggle.enabled .toggle-switch::after { left: 18px; }
+        .ai-status { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); border-radius: 20px; }
+        .ai-status.speaking { background: rgba(0,255,136,0.1); border-color: var(--bot-accent); }
+        .status-dot { width: 8px; height: 8px; background: var(--bot-accent); border-radius: 50%; animation: pulse 2s infinite; }
+        .ai-status.speaking .status-dot { animation: speakPulse 0.15s infinite alternate; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes speakPulse { 0% { transform: scale(1); } 100% { transform: scale(1.8); } }
+        .ai-status span { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+        .main-container { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 70px; padding-bottom: 140px; transition: transform 0.6s, opacity 0.4s; }
+        .main-container.map-active { transform: translateX(-100%); opacity: 0; pointer-events: none; }
+        .cube-scene { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1200px; position: relative; cursor: grab; }
+        .cube-glow { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,212,255,0.2) 0%, transparent 70%); border-radius: 50%; filter: blur(60px); animation: glowPulse 4s infinite; pointer-events: none; }
+        .cube-glow.speaking { width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,255,136,0.4) 0%, transparent 70%); }
+        @keyframes glowPulse { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 1; } }
+        .cube-wrapper { position: relative; width: 280px; height: 280px; transform-style: preserve-3d; transition: transform 0.1s; }
+        .cube-wrapper.animating { transition: transform 1.2s cubic-bezier(0.175,0.885,0.32,1.275); }
+        .cube-face { position: absolute; width: 280px; height: 280px; background: linear-gradient(135deg, rgba(10,15,30,0.95), rgba(5,8,15,0.98)); border: 1px solid rgba(0,212,255,0.3); border-radius: 14px; backface-visibility: hidden; display: grid; gap: 5px; padding: 10px; box-shadow: 0 0 50px rgba(0,212,255,0.15); overflow: hidden; }
+        .cube-face.speaking { border-color: rgba(0,255,136,0.6); box-shadow: 0 0 80px rgba(0,255,136,0.3); }
+        .cube-face.grid-4x3 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); }
+        .cube-face.grid-3x2 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .face-front { transform: translateZ(140px); }
+        .face-back { transform: rotateY(180deg) translateZ(140px); }
+        .face-right { transform: rotateY(90deg) translateZ(140px); }
+        .face-left { transform: rotateY(-90deg) translateZ(140px); }
+        .face-top { transform: rotateX(90deg) translateZ(140px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(140px); }
+        .face-label { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--bot-primary), var(--bot-secondary)); padding: 6px 20px; border-radius: 15px; font-family: 'Orbitron', sans-serif; font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; box-shadow: 0 0 20px var(--bot-glow); pointer-events: none; }
+        .tile { background: linear-gradient(145deg, rgba(20,35,60,0.7), rgba(10,18,30,0.8)); border: 1px solid rgba(0,212,255,0.15); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; padding: 4px; text-align: center; }
+        .tile:hover { border-color: var(--bot-primary); transform: scale(1.1) translateZ(10px); box-shadow: 0 0 20px rgba(0,212,255,0.5); }
+        .tile.highlighted { border-color: var(--bot-accent); box-shadow: 0 0 30px rgba(0,255,136,0.7); }
+        .tile-icon { font-size: 18px; margin-bottom: 1px; }
+        .tile-title { font-size: 7px; font-weight: 600; line-height: 1.1; letter-spacing: 0.3px; text-transform: uppercase; }
+        .cube-face.grid-3x2 .tile { padding: 8px; }
+        .cube-face.grid-3x2 .tile-icon { font-size: 28px; margin-bottom: 4px; }
+        .cube-face.grid-3x2 .tile-title { font-size: 10px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(5,5,16,0.98) 0%, transparent 100%); padding: 15px 20px 20px; z-index: 100; }
+        .nav-tabs { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; max-width: 900px; margin: 0 auto; }
+        .nav-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 14px; background: rgba(0,212,255,0.03); border: 1px solid rgba(0,212,255,0.15); border-radius: 12px; color: rgba(255,255,255,0.6); font-size: 9px; font-weight: 600; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; min-width: 80px; }
+        .nav-tab:hover { background: rgba(0,212,255,0.1); border-color: rgba(0,212,255,0.4); color: #fff; transform: translateY(-3px); }
+        .nav-tab.active { background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,153,255,0.15)); border-color: var(--bot-primary); color: #fff; box-shadow: 0 0 25px rgba(0,212,255,0.3); }
+        .nav-tab.map-tab { background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,200,100,0.05)); border-color: rgba(0,255,136,0.3); }
+        .nav-tab.map-tab.active { background: linear-gradient(135deg, rgba(0,255,136,0.25), rgba(0,200,100,0.2)); border-color: var(--bot-accent); }
+        .nav-icon { font-size: 18px; }
+        .chat-container { position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 600px; z-index: 100; }
+        .chat-box { background: linear-gradient(135deg, rgba(10,15,30,0.98), rgba(5,8,15,0.99)); border: 1px solid rgba(0,212,255,0.2); border-radius: 20px; padding: 12px 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .chat-box.speaking { border-color: var(--bot-accent); box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 40px rgba(0,255,136,0.3); }
+        .chat-input-wrapper { display: flex; gap: 10px; align-items: center; }
+        .aura-indicator { width: 32px; height: 32px; background: radial-gradient(circle, rgba(0,255,200,0.7) 0%, rgba(0,212,255,0.4) 60%, transparent 100%); border-radius: 50%; flex-shrink: 0; }
+        .aura-indicator.speaking { animation: auraPulse 0.15s infinite alternate; }
+        @keyframes auraPulse { 0% { transform: scale(1); } 100% { transform: scale(1.25); } }
+        .chat-input { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,212,255,0.15); border-radius: 12px; padding: 12px 16px; color: #fff; font-family: 'Rajdhani', sans-serif; font-size: 14px; outline: none; }
+        .chat-input:focus { border-color: var(--bot-primary); }
+        .chat-input::placeholder { color: rgba(255,255,255,0.3); }
+        .chat-btn { width: 44px; height: 44px; background: linear-gradient(135deg, var(--bot-primary), var(--bot-secondary)); border: none; border-radius: 50%; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .chat-btn:hover { transform: scale(1.1); }
+        .voice-btn { background: linear-gradient(135deg, var(--bot-accent), #00cc6a); }
+        .voice-btn.listening { animation: voicePulse 1s infinite; }
+        @keyframes voicePulse { 0%,100% { box-shadow: 0 0 15px rgba(0,255,136,0.5); } 50% { box-shadow: 0 0 40px rgba(0,255,136,0.8); } }
+        .audio-visualizer { display: flex; align-items: center; justify-content: center; gap: 3px; height: 30px; margin-top: 10px; opacity: 0; transition: opacity 0.3s; }
+        .audio-visualizer.active { opacity: 1; }
+        .viz-bar { width: 4px; height: 5px; background: linear-gradient(to top, var(--bot-primary), var(--bot-accent)); border-radius: 2px; transition: height 0.05s; }
+        .ai-response { margin-top: 10px; padding: 12px; background: rgba(0,212,255,0.03); border-radius: 10px; border-left: 2px solid var(--bot-primary); display: none; font-size: 13px; line-height: 1.6; }
+        .ai-response.visible { display: block; animation: fadeIn 0.3s; }
+        .ai-response.speaking { border-left-color: var(--bot-accent); background: rgba(0,255,136,0.05); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .ai-thinking { display: flex; gap: 5px; }
+        .ai-thinking span { width: 6px; height: 6px; background: var(--bot-primary); border-radius: 50%; animation: thinking 1.4s infinite; }
+        .ai-thinking span:nth-child(2) { animation-delay: 0.2s; }
+        .ai-thinking span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes thinking { 0%,100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-8px); opacity: 1; } }
+        .facility-map-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, var(--bot-darker), #020210); z-index: 90; opacity: 0; visibility: hidden; transition: all 0.5s; display: flex; flex-direction: column; padding: 80px 30px 160px; }
+        .facility-map-overlay.active { opacity: 1; visibility: visible; }
+        .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .map-title { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 700; background: linear-gradient(90deg, #fff, var(--bot-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .map-breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 12px; color: rgba(255,255,255,0.5); }
+        .map-breadcrumb span { padding: 5px 12px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); border-radius: 15px; cursor: pointer; }
+        .map-breadcrumb span.active { background: linear-gradient(135deg, rgba(0,255,136,0.2), rgba(0,212,255,0.15)); border-color: var(--bot-accent); color: #fff; }
+        .map-close-btn { width: 40px; height: 40px; border: 1px solid rgba(0,212,255,0.3); background: rgba(0,212,255,0.05); color: #fff; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        .map-close-btn:hover { background: var(--bot-primary); transform: rotate(90deg); }
+        .map-content { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; overflow-y: auto; padding: 10px; }
+        .map-card { background: linear-gradient(145deg, rgba(15,25,45,0.9), rgba(8,12,25,0.95)); border: 1px solid rgba(0,212,255,0.2); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.3s; position: relative; }
+        .map-card:hover { border-color: var(--bot-primary); transform: translateY(-5px); box-shadow: 0 10px 40px rgba(0,212,255,0.2); }
+        .map-card-icon { font-size: 36px; margin-bottom: 12px; }
+        .map-card-title { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .map-card-subtitle { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+        .map-card-status { position: absolute; top: 15px; right: 15px; width: 10px; height: 10px; border-radius: 50%; background: var(--bot-accent); box-shadow: 0 0 10px var(--bot-accent); }
+        .map-card-status.warning { background: #ffaa00; box-shadow: 0 0 10px #ffaa00; }
+        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5,5,16,0.7); z-index: 150; opacity: 0; visibility: hidden; transition: all 0.3s; backdrop-filter: blur(5px); }
+        .overlay.open { opacity: 1; visibility: visible; }
+        .detail-panel { position: fixed; top: 80px; right: -450px; width: 420px; height: calc(100vh - 180px); background: linear-gradient(180deg, rgba(10,15,30,0.99), rgba(5,8,15,1)); border-left: 1px solid rgba(0,212,255,0.2); border-radius: 20px 0 0 20px; z-index: 200; transition: right 0.5s; overflow-y: auto; }
+        .detail-panel.open { right: 0; }
+        .panel-header { padding: 25px; background: linear-gradient(135deg, rgba(0,212,255,0.08), transparent); border-bottom: 1px solid rgba(0,212,255,0.15); display: flex; justify-content: space-between; align-items: flex-start; }
+        .panel-header h2 { font-family: 'Orbitron', sans-serif; font-size: 18px; background: linear-gradient(90deg, #fff, var(--bot-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .panel-header p { font-size: 11px; opacity: 0.5; letter-spacing: 1px; text-transform: uppercase; }
+        .close-btn { width: 38px; height: 38px; border: 1px solid rgba(0,212,255,0.2); background: rgba(0,212,255,0.05); color: #fff; border-radius: 50%; cursor: pointer; font-size: 16px; }
+        .close-btn:hover { background: var(--bot-primary); transform: rotate(90deg); }
+        .panel-content { padding: 25px; }
+        .panel-description { margin-bottom: 20px; line-height: 1.7; color: rgba(255,255,255,0.7); font-size: 13px; }
+        .panel-links { display: flex; flex-direction: column; gap: 10px; }
+        .panel-link { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(0,212,255,0.1); border-radius: 12px; color: #fff; text-decoration: none; transition: all 0.3s; }
+        .panel-link:hover { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.3); transform: translateX(6px); }
+        .link-icon { width: 42px; height: 42px; background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .link-text strong { display: block; margin-bottom: 2px; font-size: 13px; }
+        .link-text span { font-size: 9px; opacity: 0.4; text-transform: uppercase; letter-spacing: 1px; }
+        .api-warning { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, rgba(255,170,0,0.2), rgba(255,100,0,0.1)); border: 1px solid rgba(255,170,0,0.5); border-radius: 12px; padding: 12px 20px; font-size: 12px; color: #ffaa00; z-index: 500; display: none; }
+        .api-warning.visible { display: block; }
+    </style>
+</head>
+<body>
+    <div class="api-warning" id="apiWarning">⚠️ ElevenLabs API key not configured. Using browser voice fallback.</div>
+    <div class="particle-container"><div class="particle-gradient" id="particleGradient"></div><canvas id="particleCanvas"></canvas></div>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon"><div class="logo-ring" id="logoRing"></div>
+                <svg viewBox="0 0 60 60" fill="none"><rect x="12" y="15" width="36" height="30" rx="6" stroke="url(#g1)" stroke-width="2"/><circle cx="24" cy="28" r="5" fill="url(#g2)"/><circle cx="36" cy="28" r="5" fill="url(#g2)"/><rect x="20" y="38" width="20" height="3" rx="1.5" fill="url(#g1)"/><rect x="26" y="8" width="8" height="7" rx="2" stroke="url(#g1)" stroke-width="2"/><circle cx="30" cy="11" r="2" fill="#00ff88"/><defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#00ff88"/></linearGradient><radialGradient id="g2"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0066aa"/></radialGradient></defs></svg>
+            </div>
+            <div class="logo-text"><h1>BOTMATON</h1><span class="tagline">Industrial Facility Intelligence</span></div>
+        </div>
+        <div class="header-right">
+            <button class="tour-btn" id="tourBtn">🎯 Take a Tour</button>
+            <button class="skip-tour-btn" id="skipTourBtn">✕ Skip Tour</button>
+            <div class="voice-toggle enabled" id="voiceToggle"><span>🔊 Voice</span><div class="toggle-switch"></div></div>
+            <div class="ai-status" id="aiStatus"><div class="status-dot"></div><span id="statusText">Aura Online</span></div>
+        </div>
+    </div>
+    <div class="main-container" id="mainContainer">
+        <div class="cube-scene" id="cubeScene">
+            <div class="cube-glow" id="cubeGlow"></div>
+            <div class="cube-wrapper" id="cube">
+                <div class="cube-face face-front grid-4x3" data-face="0"><div class="face-label">Administration</div></div>
+                <div class="cube-face face-right grid-4x3" data-face="1"><div class="face-label">Safety</div></div>
+                <div class="cube-face face-back grid-4x3" data-face="2"><div class="face-label">Production</div></div>
+                <div class="cube-face face-left grid-4x3" data-face="3"><div class="face-label">Maintenance</div></div>
+                <div class="cube-face face-top grid-4x3" data-face="4"><div class="face-label">Environmental</div></div>
+                <div class="cube-face face-bottom grid-3x2" data-face="5"><div class="face-label">Tools</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="facility-map-overlay" id="facilityMapOverlay">
+        <div class="map-header">
+            <div><h2 class="map-title">🗺️ Facility Map</h2><div class="map-breadcrumb"><span class="active">Campus</span><span>→</span><span>Building</span><span>→</span><span>Zone</span><span>→</span><span>Equipment</span></div></div>
+            <button class="map-close-btn" id="mapCloseBtn">✕</button>
+        </div>
+        <div class="map-content" id="mapContent"></div>
+    </div>
+    <div class="chat-container">
+        <div class="chat-box" id="chatBox">
+            <div class="chat-input-wrapper">
+                <div class="aura-indicator" id="auraIndicator"></div>
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask Aura... 'Show LOTO for Boiler 1'">
+                <button class="chat-btn voice-btn" id="voiceBtn">🎤</button>
+                <button class="chat-btn" id="sendBtn">➤</button>
+            </div>
+            <div class="audio-visualizer" id="audioVisualizer"></div>
+            <div class="ai-response" id="aiResponse"><p id="responseText"></p></div>
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-face="0"><span class="nav-icon">🏢</span>Admin</div>
+            <div class="nav-tab" data-face="1"><span class="nav-icon">🛡️</span>Safety</div>
+            <div class="nav-tab" data-face="2"><span class="nav-icon">🏭</span>Production</div>
+            <div class="nav-tab" data-face="3"><span class="nav-icon">🔧</span>Maintenance</div>
+            <div class="nav-tab" data-face="4"><span class="nav-icon">🌿</span>Environmental</div>
+            <div class="nav-tab" data-face="5"><span class="nav-icon">⚙️</span>Tools</div>
+            <div class="nav-tab map-tab" data-action="map"><span class="nav-icon">🗺️</span>Facility Map</div>
+        </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+    <div class="detail-panel" id="detailPanel">
+        <div class="panel-header"><div><h2 id="panelTitle">Title</h2><p id="panelSubtitle">Subtitle</p></div><button class="close-btn" id="closePanel">✕</button></div>
+        <div class="panel-content"><p class="panel-description" id="panelDescription"></p><div class="panel-links" id="panelLinks"></div></div>
+    </div>
+<script>
+const ELEVENLABS_CONFIG = { apiKey: 'sk_0bccf7c4776248c14a0ecd92c4915065fe438baaeb65eee5', voiceId: 'ZT9u07TYPVl83ejeLakq', modelId: 'eleven_multilingual_v2' };
+
+const cubeData = { faces: [
+    { name: "Administration", tiles: [
+        { id: "company", icon: "🏢", title: "Company", subtitle: "Portal", description: "Company resources.", links: [{ label: "Company Website", url: "#", type: "link" }] },
+        { id: "handbook", icon: "📘", title: "Handbook", subtitle: "Policies", description: "Employee handbook.", links: [{ label: "Handbook", url: "#", type: "pdf" }] },
+        { id: "forms", icon: "📝", title: "Forms", subtitle: "Admin", description: "Forms library.", links: [{ label: "Forms", url: "#", type: "form" }] },
+        { id: "directory", icon: "📇", title: "Directory", subtitle: "Contacts", description: "Contact directory.", links: [{ label: "Directory", url: "#", type: "pdf" }] },
+        { id: "documents", icon: "📄", title: "Documents", subtitle: "Files", description: "Document library.", links: [{ label: "Documents", url: "#", type: "folder" }] },
+        { id: "manuals", icon: "📚", title: "Manuals", subtitle: "Reference", description: "Company manuals.", links: [{ label: "Manuals", url: "#", type: "pdf" }] },
+        { id: "erp", icon: "💻", title: "ERP", subtitle: "System", description: "ERP system.", links: [{ label: "ERP Login", url: "#", type: "external" }] },
+        { id: "employment", icon: "👤", title: "Employment", subtitle: "Jobs", description: "Careers.", links: [{ label: "Apply", url: "#", type: "form" }] },
+        { id: "charts", icon: "📊", title: "Org Chart", subtitle: "Structure", description: "Org structure.", links: [{ label: "Org Chart", url: "#", type: "doc" }] },
+        { id: "payroll", icon: "💰", title: "Payroll", subtitle: "System", description: "Payroll.", links: [{ label: "Payroll", url: "#", type: "external" }] },
+        { id: "benefits", icon: "🎁", title: "Benefits", subtitle: "HR", description: "Benefits info.", links: [{ label: "Benefits", url: "#", type: "pdf" }] },
+        { id: "policies", icon: "📜", title: "Policies", subtitle: "Rules", description: "Company policies.", links: [{ label: "Policies", url: "#", type: "pdf" }] }
+    ]},
+    { name: "Safety", tiles: [
+        { id: "loto", icon: "🔒", title: "LOTO", subtitle: "Lockout", description: "Lockout/Tagout procedures.", links: [{ label: "LOTO Procedures", url: "#", type: "map" }, { label: "Boiler 1 LOTO", url: "#", type: "pdf" }] },
+        { id: "jsa", icon: "📋", title: "JSA's", subtitle: "Job Safety", description: "Job Safety Analysis.", links: [{ label: "JSA Library", url: "#", type: "folder" }] },
+        { id: "incident", icon: "🚨", title: "Incidents", subtitle: "Reports", description: "Incident reports.", links: [{ label: "Report Incident", url: "#", type: "form" }] },
+        { id: "training", icon: "🎓", title: "Training", subtitle: "Safety", description: "Training materials.", links: [{ label: "Training", url: "#", type: "folder" }] },
+        { id: "sds", icon: "☣️", title: "SDS", subtitle: "Chemicals", description: "Safety Data Sheets.", links: [{ label: "SDS Database", url: "#", type: "folder" }] },
+        { id: "ppe", icon: "🥽", title: "PPE", subtitle: "Equipment", description: "PPE requirements.", links: [{ label: "PPE Matrix", url: "#", type: "doc" }] },
+        { id: "emergency", icon: "🚒", title: "Emergency", subtitle: "Response", description: "Emergency plans.", links: [{ label: "EAP", url: "#", type: "pdf" }] },
+        { id: "firstaid", icon: "🏥", title: "First Aid", subtitle: "Medical", description: "First aid stations.", links: [{ label: "Stations", url: "#", type: "map" }] },
+        { id: "osha", icon: "🏛️", title: "OSHA", subtitle: "Compliance", description: "OSHA records.", links: [{ label: "OSHA 300", url: "#", type: "pdf" }] },
+        { id: "audit", icon: "✅", title: "Audits", subtitle: "Inspections", description: "Safety audits.", links: [{ label: "Checklist", url: "#", type: "form" }] },
+        { id: "meetings", icon: "👥", title: "Meetings", subtitle: "Safety", description: "Meeting records.", links: [{ label: "Minutes", url: "#", type: "folder" }] },
+        { id: "program", icon: "🦺", title: "Program", subtitle: "Overview", description: "Safety program.", links: [{ label: "Safety Manual", url: "#", type: "pdf" }] }
+    ]},
+    { name: "Production", tiles: [
+        { id: "dashboard", icon: "📊", title: "Dashboard", subtitle: "Live", description: "Production dashboard.", links: [{ label: "Dashboard", url: "#", type: "link" }] },
+        { id: "schedule", icon: "📅", title: "Schedule", subtitle: "Planning", description: "Production schedule.", links: [{ label: "Schedule", url: "#", type: "doc" }] },
+        { id: "quality", icon: "✅", title: "Quality", subtitle: "QC/QA", description: "Quality control.", links: [{ label: "Quality Manual", url: "#", type: "pdf" }] },
+        { id: "inventory", icon: "📦", title: "Inventory", subtitle: "Stock", description: "Inventory system.", links: [{ label: "Inventory", url: "#", type: "link" }] },
+        { id: "shipping", icon: "🚚", title: "Shipping", subtitle: "Logistics", description: "Shipping logistics.", links: [{ label: "Shipping", url: "#", type: "doc" }] },
+        { id: "reports", icon: "📈", title: "Reports", subtitle: "Data", description: "Production reports.", links: [{ label: "Reports", url: "#", type: "folder" }] },
+        { id: "sops", icon: "⚡", title: "SOPs", subtitle: "Procedures", description: "SOPs.", links: [{ label: "SOP Library", url: "#", type: "folder" }] },
+        { id: "metrics", icon: "🎯", title: "KPIs", subtitle: "Metrics", description: "KPIs.", links: [{ label: "KPI Dashboard", url: "#", type: "link" }] },
+        { id: "video", icon: "📹", title: "Cameras", subtitle: "Live", description: "Camera feeds.", links: [{ label: "Cameras", url: "#", type: "link" }] },
+        { id: "logs", icon: "📝", title: "Logs", subtitle: "History", description: "Production logs.", links: [{ label: "Logs", url: "#", type: "folder" }] },
+        { id: "downtime", icon: "⏱️", title: "Downtime", subtitle: "Tracking", description: "Downtime tracking.", links: [{ label: "Downtime", url: "#", type: "doc" }] },
+        { id: "erp-prod", icon: "💻", title: "ERP", subtitle: "System", description: "ERP module.", links: [{ label: "ERP", url: "#", type: "external" }] }
+    ]},
+    { name: "Maintenance", tiles: [
+        { id: "cmms", icon: "🔧", title: "CMMS", subtitle: "System", description: "CMMS.", links: [{ label: "Open CMMS", url: "#", type: "external" }] },
+        { id: "workorders", icon: "📋", title: "Work Orders", subtitle: "Tasks", description: "Work orders.", links: [{ label: "New WO", url: "#", type: "form" }] },
+        { id: "pms", icon: "🔄", title: "PM's", subtitle: "Preventive", description: "PM schedule.", links: [{ label: "PM Calendar", url: "#", type: "doc" }] },
+        { id: "equipment", icon: "⚙️", title: "Equipment", subtitle: "Assets", description: "Equipment registry.", links: [{ label: "Equipment", url: "#", type: "doc" }] },
+        { id: "parts", icon: "🔩", title: "Parts", subtitle: "Inventory", description: "Parts inventory.", links: [{ label: "Parts", url: "#", type: "link" }] },
+        { id: "vendors", icon: "🏪", title: "Vendors", subtitle: "Suppliers", description: "Vendor list.", links: [{ label: "Vendors", url: "#", type: "doc" }] },
+        { id: "schematics", icon: "📐", title: "Schematics", subtitle: "Drawings", description: "Technical drawings.", links: [{ label: "Schematics", url: "#", type: "folder" }] },
+        { id: "manuals-maint", icon: "📖", title: "Manuals", subtitle: "Tech Docs", description: "Equipment manuals.", links: [{ label: "Manuals", url: "#", type: "folder" }] },
+        { id: "history", icon: "📜", title: "History", subtitle: "Log", description: "Maintenance history.", links: [{ label: "History", url: "#", type: "folder" }] },
+        { id: "calibration", icon: "🎚️", title: "Calibration", subtitle: "Instruments", description: "Calibration schedule.", links: [{ label: "Cal Schedule", url: "#", type: "doc" }] },
+        { id: "utilities", icon: "💡", title: "Utilities", subtitle: "Systems", description: "Utility systems.", links: [{ label: "Utilities", url: "#", type: "map" }] },
+        { id: "facilities", icon: "🏗️", title: "Facilities", subtitle: "Buildings", description: "Building maintenance.", links: [{ label: "Facilities", url: "#", type: "map" }] }
+    ]},
+    { name: "Environmental", tiles: [
+        { id: "air", icon: "💨", title: "Air Quality", subtitle: "Emissions", description: "Air permits.", links: [{ label: "Air Permit", url: "#", type: "pdf" }] },
+        { id: "water", icon: "💧", title: "Water", subtitle: "Discharge", description: "NPDES permits.", links: [{ label: "NPDES", url: "#", type: "pdf" }] },
+        { id: "hazwaste", icon: "☣️", title: "Haz Waste", subtitle: "Disposal", description: "Waste manifests.", links: [{ label: "Manifests", url: "#", type: "folder" }] },
+        { id: "stormwater", icon: "🌧️", title: "Stormwater", subtitle: "Runoff", description: "SWPPP.", links: [{ label: "SWPPP", url: "#", type: "pdf" }] },
+        { id: "permits", icon: "📜", title: "Permits", subtitle: "Library", description: "Permit library.", links: [{ label: "Permits", url: "#", type: "folder" }] },
+        { id: "regulations", icon: "📚", title: "Regulations", subtitle: "Reference", description: "EPA regulations.", links: [{ label: "Regulations", url: "#", type: "folder" }] },
+        { id: "reporting", icon: "📊", title: "Reporting", subtitle: "Compliance", description: "Compliance reports.", links: [{ label: "Reports", url: "#", type: "folder" }] },
+        { id: "spcc", icon: "🛢️", title: "SPCC", subtitle: "Oil/Spills", description: "SPCC plan.", links: [{ label: "SPCC", url: "#", type: "pdf" }] },
+        { id: "tier2", icon: "📋", title: "Tier II", subtitle: "Chemical", description: "Tier II inventory.", links: [{ label: "Tier II", url: "#", type: "pdf" }] },
+        { id: "audits-env", icon: "✅", title: "Audits", subtitle: "Inspections", description: "Environmental audits.", links: [{ label: "Audits", url: "#", type: "folder" }] },
+        { id: "training-env", icon: "🎓", title: "Training", subtitle: "Enviro", description: "Environmental training.", links: [{ label: "Training", url: "#", type: "folder" }] },
+        { id: "metrics-env", icon: "📈", title: "Metrics", subtitle: "KPIs", description: "Environmental KPIs.", links: [{ label: "Dashboard", url: "#", type: "link" }] }
+    ]},
+    { name: "Tools", tiles: [
+        { id: "facility-builder", icon: "🏗️", title: "Facility Builder", subtitle: "Spatial Mapping", description: "Build your facility hierarchy.", links: [{ label: "Open Builder", url: "#", type: "tool" }] },
+        { id: "maintenance-manager", icon: "🔧", title: "Maintenance Mgr", subtitle: "CMMS", description: "Full CMMS functionality.", links: [{ label: "Open Manager", url: "#", type: "tool" }] },
+        { id: "loto-builder", icon: "🔒", title: "LOTO Builder", subtitle: "Procedures", description: "Create LOTO procedures.", links: [{ label: "Open Builder", url: "#", type: "tool" }] },
+        { id: "compliance-tracker", icon: "📋", title: "Compliance", subtitle: "Regulatory", description: "Track compliance.", links: [{ label: "Open Tracker", url: "#", type: "tool" }] },
+        { id: "cube-configurator", icon: "🎛️", title: "Cube Config", subtitle: "Customize", description: "Customize cube interface.", links: [{ label: "Open Config", url: "#", type: "tool" }] },
+        { id: "report-builder", icon: "📊", title: "Report Builder", subtitle: "Analytics", description: "Build reports.", links: [{ label: "Open Builder", url: "#", type: "tool" }] }
+    ]}
+]};
+
+const facilityMapData = [
+    { icon: "🏭", title: "Building A", subtitle: "Main Production", status: "normal" },
+    { icon: "🏢", title: "Building B", subtitle: "Administration", status: "normal" },
+    { icon: "📦", title: "Warehouse", subtitle: "Storage & Shipping", status: "warning" },
+    { icon: "⚡", title: "Utility Building", subtitle: "Boilers & Compressors", status: "normal" },
+    { icon: "🔧", title: "Maintenance Shop", subtitle: "Workshop", status: "normal" },
+    { icon: "🛢️", title: "Tank Farm", subtitle: "Fuel & Chemical Storage", status: "normal" }
+];
+
+class AudioSystem {
+    constructor() {
+        this.voiceEnabled = true;
+        this.isActive = false;
+        this.usingElevenLabs = ELEVENLABS_CONFIG.apiKey !== 'YOUR_API_KEY_HERE';
+        this.currentAudio = null;
+        this.vizBars = [];
+        this.femaleVoice = null;
+        this.createVisualizerBars();
+        this.initBrowserVoice();
+        document.getElementById('voiceToggle').addEventListener('click', () => this.toggleVoice());
+        if (!this.usingElevenLabs) {
+            const warn = document.getElementById('apiWarning');
+            warn.classList.add('visible');
+            setTimeout(() => warn.classList.remove('visible'), 5000);
+        }
+    }
+    initBrowserVoice() {
+        // Pre-select a female voice for browser fallback
+        const selectFemaleVoice = () => {
+            const voices = speechSynthesis.getVoices();
+            // Priority order for female voices
+            const femaleKeywords = ['female', 'woman', 'samantha', 'victoria', 'karen', 'moira', 'tessa', 'fiona', 'veena', 'zira', 'hazel', 'susan', 'linda', 'catherine', 'allison', 'ava'];
+            // First try to find explicitly female voices
+            for (const keyword of femaleKeywords) {
+                const found = voices.find(v => v.name.toLowerCase().includes(keyword));
+                if (found) { this.femaleVoice = found; return; }
+            }
+            // Fallback: prefer any English voice that's not obviously male
+            const maleKeywords = ['male', 'man', 'david', 'james', 'daniel', 'mark', 'alex', 'fred', 'tom', 'george', 'richard'];
+            const englishVoice = voices.find(v => {
+                const nameLower = v.name.toLowerCase();
+                const isEnglish = v.lang.startsWith('en');
+                const notMale = !maleKeywords.some(m => nameLower.includes(m));
+                return isEnglish && notMale;
+            });
+            if (englishVoice) this.femaleVoice = englishVoice;
+            else if (voices.length > 0) this.femaleVoice = voices[0];
+        };
+        // Voices load async in some browsers
+        if (speechSynthesis.getVoices().length > 0) {
+            selectFemaleVoice();
+        } else {
+            speechSynthesis.onvoiceschanged = selectFemaleVoice;
+        }
+    }
+    createVisualizerBars() {
+        const viz = document.getElementById('audioVisualizer');
+        for (let i = 0; i < 20; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'viz-bar';
+            viz.appendChild(bar);
+        }
+        this.vizBars = viz.querySelectorAll('.viz-bar');
+    }
+    toggleVoice() {
+        this.voiceEnabled = !this.voiceEnabled;
+        document.getElementById('voiceToggle').classList.toggle('enabled', this.voiceEnabled);
+    }
+    async speak(text, callback) {
+        if (!this.voiceEnabled) { if (callback) callback(); return; }
+        this.stopCurrentAudio();
+        if (this.usingElevenLabs) await this.speakElevenLabs(text, callback);
+        else this.speakBrowser(text, callback);
+    }
+    async speakElevenLabs(text, callback) {
+        try {
+            this.startVisuals();
+            const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_CONFIG.voiceId}`, {
+                method: 'POST',
+                headers: { 'Accept': 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': ELEVENLABS_CONFIG.apiKey },
+                body: JSON.stringify({ text, model_id: ELEVENLABS_CONFIG.modelId, voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
+            });
+            if (!res.ok) throw new Error('API error');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            this.currentAudio = new Audio(url);
+            this.animateViz();
+            this.currentAudio.onended = () => { this.stopVisuals(); URL.revokeObjectURL(url); if (callback) callback(); };
+            await this.currentAudio.play();
+        } catch (e) {
+            console.error(e);
+            this.stopVisuals();
+            this.speakBrowser(text, callback);
+        }
+    }
+    speakBrowser(text, callback) {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        // Use the pre-selected female voice
+        if (this.femaleVoice) {
+            u.voice = this.femaleVoice;
+        }
+        u.pitch = 1.1;  // Slightly higher pitch
+        u.rate = 0.95;  // Slightly slower for clarity
+        u.onstart = () => { this.startVisuals(); this.animateViz(); };
+        u.onend = () => { this.stopVisuals(); if (callback) callback(); };
+        u.onerror = () => { this.stopVisuals(); if (callback) callback(); };
+        speechSynthesis.speak(u);
+    }
+    animateViz() {
+        if (!this.isActive) return;
+        this.vizBars.forEach(b => b.style.height = `${5 + Math.random() * 25}px`);
+        requestAnimationFrame(() => this.animateViz());
+    }
+    stopCurrentAudio() {
+        if (this.currentAudio) { this.currentAudio.pause(); this.currentAudio = null; }
+        speechSynthesis.cancel();
+        this.stopVisuals();
+    }
+    startVisuals() {
+        this.isActive = true;
+        document.getElementById('cubeGlow').classList.add('speaking');
+        document.getElementById('logoRing').classList.add('speaking');
+        document.getElementById('aiStatus').classList.add('speaking');
+        document.getElementById('chatBox').classList.add('speaking');
+        document.getElementById('aiResponse').classList.add('speaking');
+        document.getElementById('auraIndicator').classList.add('speaking');
+        document.getElementById('audioVisualizer').classList.add('active');
+        document.getElementById('statusText').textContent = 'Aura Speaking...';
+        document.querySelectorAll('.cube-face').forEach(f => f.classList.add('speaking'));
+    }
+    stopVisuals() {
+        this.isActive = false;
+        document.getElementById('cubeGlow').classList.remove('speaking');
+        document.getElementById('logoRing').classList.remove('speaking');
+        document.getElementById('aiStatus').classList.remove('speaking');
+        document.getElementById('chatBox').classList.remove('speaking');
+        document.getElementById('aiResponse').classList.remove('speaking');
+        document.getElementById('auraIndicator').classList.remove('speaking');
+        document.getElementById('audioVisualizer').classList.remove('active');
+        document.getElementById('statusText').textContent = 'Aura Online';
+        document.querySelectorAll('.cube-face').forEach(f => f.classList.remove('speaking'));
+        this.vizBars.forEach(b => b.style.height = '5px');
+    }
+}
+
+class ParticleNetwork {
+    constructor() {
+        this.canvas = document.getElementById('particleCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.particles = [];
+        this.resize();
+        this.init();
+        this.animate();
+        window.addEventListener('resize', () => this.resize());
+    }
+    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+    init() {
+        const count = Math.floor((this.canvas.width * this.canvas.height) / 15000);
+        for (let i = 0; i < count; i++) {
+            this.particles.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, r: Math.random() * 2 + 1 });
+        }
+    }
+    animate() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy;
+            if (p.x < 0 || p.x > this.canvas.width) p.vx *= -1;
+            if (p.y < 0 || p.y > this.canvas.height) p.vy *= -1;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
+            this.ctx.fill();
+        });
+        for (let i = 0; i < this.particles.length; i++) {
+            for (let j = i + 1; j < this.particles.length; j++) {
+                const dx = this.particles[i].x - this.particles[j].x;
+                const dy = this.particles[i].y - this.particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 150) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
+                    this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
+                    this.ctx.strokeStyle = `rgba(0, 212, 255, ${0.2 * (1 - dist / 150)})`;
+                    this.ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(() => this.animate());
+    }
+}
+
+class BotmatonCube {
+    constructor() {
+        this.cube = document.getElementById('cube');
+        this.currentFace = 0;
+        this.rotationX = -8;
+        this.rotationY = 0;
+        this.isDragging = false;
+        this.tourInProgress = false;
+        this.tourCancelled = false;
+        this.faceRotations = [{ x: -8, y: 0 }, { x: -8, y: -90 }, { x: -8, y: -180 }, { x: -8, y: -270 }, { x: -98, y: 0 }, { x: 82, y: 0 }];
+        this.audio = new AudioSystem();
+        this.init();
+    }
+    init() {
+        this.renderTiles();
+        this.renderMap();
+        this.bindEvents();
+        this.updateCube();
+        new ParticleNetwork();
+        speechSynthesis.getVoices();
+    }
+    renderTiles() {
+        document.querySelectorAll('.cube-face').forEach((face, i) => {
+            if (cubeData.faces[i]) {
+                cubeData.faces[i].tiles.forEach(tile => {
+                    const el = document.createElement('div');
+                    el.className = 'tile';
+                    el.dataset.tileId = tile.id;
+                    el.dataset.faceIndex = i;
+                    el.innerHTML = `<span class="tile-icon">${tile.icon}</span><span class="tile-title">${tile.title}</span>`;
+                    el.addEventListener('click', e => { e.stopPropagation(); this.openPanel(tile); });
+                    face.appendChild(el);
+                });
+            }
+        });
+    }
+    renderMap() {
+        const content = document.getElementById('mapContent');
+        facilityMapData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'map-card';
+            card.innerHTML = `<div class="map-card-status ${item.status}"></div><div class="map-card-icon">${item.icon}</div><div class="map-card-title">${item.title}</div><div class="map-card-subtitle">${item.subtitle}</div>`;
+            content.appendChild(card);
+        });
+    }
+    bindEvents() {
+        const scene = document.getElementById('cubeScene');
+        scene.addEventListener('mousedown', e => { if (!e.target.closest('.tile')) { this.isDragging = true; this.lastX = e.clientX; this.lastY = e.clientY; } });
+        document.addEventListener('mousemove', e => { if (this.isDragging) { this.rotationY += (e.clientX - this.lastX) * 0.5; this.rotationX -= (e.clientY - this.lastY) * 0.5; this.rotationX = Math.max(-90, Math.min(90, this.rotationX)); this.lastX = e.clientX; this.lastY = e.clientY; this.updateCube(); } });
+        document.addEventListener('mouseup', () => this.isDragging = false);
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                if (tab.dataset.action === 'map') this.openMap();
+                else { this.closeMap(); this.rotateTo(parseInt(tab.dataset.face)); }
+            });
+        });
+        document.getElementById('sendBtn').addEventListener('click', () => this.processQuery(document.getElementById('chatInput').value));
+        document.getElementById('chatInput').addEventListener('keypress', e => { if (e.key === 'Enter') this.processQuery(e.target.value); });
+        document.getElementById('voiceBtn').addEventListener('click', () => this.toggleVoiceInput());
+        document.getElementById('closePanel').addEventListener('click', () => this.closePanel());
+        document.getElementById('overlay').addEventListener('click', () => this.closePanel());
+        document.getElementById('mapCloseBtn').addEventListener('click', () => this.closeMap());
+        document.getElementById('tourBtn').addEventListener('click', () => this.startTour());
+        document.getElementById('skipTourBtn').addEventListener('click', () => this.skipTour());
+    }
+    openMap() { document.getElementById('facilityMapOverlay').classList.add('active'); document.getElementById('mainContainer').classList.add('map-active'); this.updateNavTabs('map'); }
+    closeMap() { document.getElementById('facilityMapOverlay').classList.remove('active'); document.getElementById('mainContainer').classList.remove('map-active'); this.updateNavTabs(); }
+    rotateTo(face) {
+        this.currentFace = face;
+        const r = this.faceRotations[face];
+        this.rotationX = r.x;
+        this.rotationY = r.y;
+        this.cube.classList.add('animating');
+        this.updateCube();
+        this.updateNavTabs();
+        setTimeout(() => this.cube.classList.remove('animating'), 1200);
+    }
+    updateCube() { this.cube.style.transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`; }
+    updateNavTabs(map) {
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            if (map === 'map') tab.classList.toggle('active', tab.dataset.action === 'map');
+            else if (tab.dataset.action === 'map') tab.classList.remove('active');
+            else tab.classList.toggle('active', parseInt(tab.dataset.face) === this.currentFace);
+        });
+    }
+    skipTour() {
+        this.tourCancelled = true;
+        this.audio.stopCurrentAudio();
+        document.getElementById('skipTourBtn').classList.remove('visible');
+        document.getElementById('tourBtn').disabled = false;
+        document.getElementById('responseText').innerHTML = "Tour skipped. Feel free to explore on your own!";
+        this.tourInProgress = false;
+    }
+    async startTour() {
+        if (this.tourInProgress) return;
+        this.tourInProgress = true;
+        this.tourCancelled = false;
+        document.getElementById('tourBtn').disabled = true;
+        document.getElementById('skipTourBtn').classList.add('visible');
+        this.closePanel(); this.closeMap();
+        const steps = [
+            { text: "Welcome to Botmaton! I'm Aura, your facility intelligence assistant. Let me show you around." },
+            { text: "This cube represents your entire operation. Each face is a domain. Let's explore them together." },
+            { text: "Administration. Your policies, employee handbook, org charts, and HR resources all live here.", action: () => this.rotateTo(0) },
+            { text: "Safety. LOTO procedures, permits, incident reports, SDS sheets, and training records.", action: () => this.rotateTo(1) },
+            { text: "Production. Schedules, quality metrics, output tracking, and live dashboards.", action: () => this.rotateTo(2) },
+            { text: "Maintenance. Work orders, PM schedules, parts inventory, and your complete CMMS.", action: () => this.rotateTo(3) },
+            { text: "Environmental. Air and water permits, emissions, waste manifests, and compliance.", action: () => this.rotateTo(4) },
+            { text: "Tools. Configure the platform, build procedures, customize the cube.", action: () => this.rotateTo(5) },
+            { text: "See the Facility Map button? That's your live operational view. Drill down from campus to equipment.", action: () => setTimeout(() => this.openMap(), 800) },
+            { text: "You can ask me anything. Type or tap the microphone. What would you like to explore?", action: () => { this.closeMap(); this.rotateTo(0); } }
+        ];
+        for (const step of steps) {
+            // Check if tour was cancelled
+            if (this.tourCancelled) break;
+            
+            if (step.action) { step.action(); await this.delay(800); }
+            
+            // Check again after action delay
+            if (this.tourCancelled) break;
+            
+            document.getElementById('responseText').innerHTML = step.text;
+            document.getElementById('aiResponse').classList.add('visible');
+            
+            // Wrap speak in a promise that can be interrupted
+            await new Promise(resolve => {
+                if (this.tourCancelled) { resolve(); return; }
+                this.audio.speak(step.text, resolve);
+            });
+            
+            if (this.tourCancelled) break;
+            await this.delay(400);
+        }
+        
+        // Clean up tour state
+        this.tourInProgress = false;
+        document.getElementById('tourBtn').disabled = false;
+        document.getElementById('skipTourBtn').classList.remove('visible');
+    }
+    delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+    processQuery(query) {
+        if (!query.trim()) return;
+        const response = document.getElementById('aiResponse');
+        const text = document.getElementById('responseText');
+        response.classList.add('visible');
+        text.innerHTML = '<div class="ai-thinking"><span></span><span></span><span></span></div>';
+        setTimeout(() => {
+            const result = this.findMatch(query.toLowerCase());
+            text.innerHTML = result.response;
+            this.audio.speak(result.response.replace(/<[^>]*>/g, ''), () => {
+                if (result.face !== null) { this.closeMap(); this.rotateTo(result.face); }
+                if (result.openMap) setTimeout(() => this.openMap(), 500);
+            });
+        }, 800);
+        document.getElementById('chatInput').value = '';
+    }
+    findMatch(q) {
+        if (q.includes('loto') || q.includes('lockout')) return { face: 1, response: '🔒 Here are the LOTO procedures.' };
+        if (q.includes('safety')) return { face: 1, response: 'Opening Safety section.' };
+        if (q.includes('environmental') || q.includes('permit')) return { face: 4, response: 'Opening Environmental section.' };
+        if (q.includes('maintenance') || q.includes('cmms')) return { face: 3, response: 'Opening Maintenance with CMMS.' };
+        if (q.includes('production')) return { face: 2, response: 'Opening Production section.' };
+        if (q.includes('admin') || q.includes('handbook')) return { face: 0, response: 'Opening Administration.' };
+        if (q.includes('tools') || q.includes('config')) return { face: 5, response: 'Opening Tools.' };
+        if (q.includes('map') || q.includes('facility')) return { face: null, openMap: true, response: 'Opening Facility Map.' };
+        if (q.includes('tour')) { setTimeout(() => this.startTour(), 500); return { face: null, response: 'Starting the tour!' }; }
+        if (q.includes('hello') || q.includes('hi')) return { face: null, response: "Hello! I'm Aura. How can I help?" };
+        return { face: null, response: 'I can help with LOTO, safety, maintenance, production, environmental, or facility map.' };
+    }
+    toggleVoiceInput() {
+        const btn = document.getElementById('voiceBtn');
+        if (!('webkitSpeechRecognition' in window)) { alert('Voice not supported'); return; }
+        const SR = window.webkitSpeechRecognition;
+        const recognition = new SR();
+        recognition.onstart = () => btn.classList.add('listening');
+        recognition.onresult = e => { document.getElementById('chatInput').value = e.results[0][0].transcript; this.processQuery(e.results[0][0].transcript); };
+        recognition.onend = () => btn.classList.remove('listening');
+        recognition.start();
+    }
+    openPanel(tile) {
+        document.getElementById('panelTitle').textContent = tile.title;
+        document.getElementById('panelSubtitle').textContent = tile.subtitle;
+        document.getElementById('panelDescription').textContent = tile.description;
+        const links = document.getElementById('panelLinks');
+        links.innerHTML = '';
+        const icons = { pdf: '📄', doc: '📝', folder: '📁', form: '📋', link: '🔗', external: '🌐', map: '🗺️', tool: '🛠️' };
+        tile.links.forEach(link => {
+            const a = document.createElement('a');
+            a.className = 'panel-link';
+            a.href = link.url;
+            a.innerHTML = `<span class="link-icon">${icons[link.type] || '📎'}</span><span class="link-text"><strong>${link.label}</strong><span>${link.type.toUpperCase()}</span></span>`;
+            links.appendChild(a);
+        });
+        document.getElementById('detailPanel').classList.add('open');
+        document.getElementById('overlay').classList.add('open');
+    }
+    closePanel() {
+        document.getElementById('detailPanel').classList.remove('open');
+        document.getElementById('overlay').classList.remove('open');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => new BotmatonCube());
+</script>
+</body>
+</html>
