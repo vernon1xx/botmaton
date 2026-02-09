@@ -72,7 +72,16 @@ The platform connects to the backend infrastructure taught in our documentation 
 
 ---
 
-## 📚 The Industrial AI Platform Documentation Series
+## 📚 Documentation & Resources
+
+### Interactive Resources
+
+| Resource | Description |
+|----------|-------------|
+| [🎮 Live Demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.1-aura.html) | Interactive prototype with Aura AI assistant |
+| [🏗️ System Architecture](https://vernon1xx.github.io/botmaton/docs/Redundant_AI_Systems_Architecture_Version_3.html) | 5-tab visual architecture reference |
+
+### The Industrial AI Platform Documentation Series
 
 Botmaton is the capstone of a comprehensive **6-book technical documentation series** covering everything needed to deploy AI-powered systems in industrial facilities:
 
@@ -135,7 +144,7 @@ botmaton/
 │   ├── botmaton-v2-aura.html     ← Audio-reactive update
 │   └── botmaton-v1.html          ← Original prototype
 ├── docs/
-│   └── README.md
+│   └── Redundant_AI_Systems_Architecture_Version_3.html
 ├── CHANGELOG.md
 ├── LICENSE
 └── README.md
