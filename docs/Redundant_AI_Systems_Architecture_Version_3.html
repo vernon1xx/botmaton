@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redundant AI Systems Architecture — Botmaton v3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3654;
+    --cyan: #00d4ff;
+    --green: #00ff88;
+    --orange: #ff8c42;
+    --purple: #a78bfa;
+    --red: #ff4d6a;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    overflow-x: hidden;
+  }
+
+  .page-header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+  .page-header h1 {
+    font-size: 2.4rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .page-header .subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 300;
+  }
+  .page-header .version {
+    font-size: 0.8rem;
+    color: var(--green);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 20px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 10px 22px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+  .tab:hover { border-color: var(--cyan); color: var(--text); }
+  .tab.active {
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,255,136,0.08));
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,212,255,0.1);
+  }
+
+  .view { display: none; padding: 0 20px 60px; max-width: 1400px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  .arch-container { position: relative; width: 100%; min-height: 750px; }
+  .arch-svg { width: 100%; height: 750px; }
+
+  .connection-line { stroke-width: 2.5; fill: none; opacity: 0.6; }
+  .connection-line.mcp { stroke: var(--cyan); stroke-dasharray: 8 4; }
+  .connection-line.api { stroke: var(--orange); }
+  .connection-line.docker { stroke: var(--green); stroke-dasharray: 4 2; }
+  .connection-line.data { stroke: var(--purple); }
+  .connection-line.web { stroke: var(--yellow); stroke-dasharray: 12 4; }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .legend-line { width: 32px; height: 3px; border-radius: 2px; }
+
+  .trees-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) { .trees-grid { grid-template-columns: 1fr; } }
+
+  .tree-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .tree-header {
+    padding: 16px 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tree-header .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .tree-body {
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text);
+    max-height: 700px;
+    overflow-y: auto;
+  }
+  .tree-body .dir { color: var(--cyan); font-weight: 700; }
+  .tree-body .file { color: var(--muted); }
+  .tree-body .special { color: var(--green); }
+  .tree-body .docker { color: var(--orange); }
+  .tree-body .config { color: var(--yellow); }
+  .tree-body .tool { color: var(--purple); }
+
+  .integration-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+
+  .int-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+  }
+  .int-card h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .int-card p {
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 12px;
+  }
+  .int-card code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--cyan);
+  }
+
+  .flow-diagram {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 2;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .schema-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.85rem;
+  }
+  .schema-table th {
+    background: var(--surface2);
+    color: var(--cyan);
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  .schema-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .schema-table tr:hover { background: rgba(0,212,255,0.05); }
+  .schema-table .domain { color: var(--green); font-weight: 600; }
+  .schema-table .count { color: var(--orange); font-family: 'JetBrains Mono', monospace; }
+
+  .auto-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 20px;
+  }
+  .auto-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 0.3s;
+  }
+  .auto-card:hover { border-color: var(--cyan); }
+  .auto-card h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--cyan);
+  }
+  .auto-card .approach {
+    font-size: 0.85rem;
+    color: var(--green);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .auto-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .auto-card .code-block {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text);
+  }
+
+  .redundancy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .redundancy-grid { grid-template-columns: 1fr; } }
+
+  .red-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 0.3s;
+  }
+  .red-card:hover { border-color: var(--cyan); }
+  .red-card h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .red-card .tier {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  .tier.t1 { background: rgba(0,212,255,0.15); color: var(--cyan); }
+  .tier.t2 { background: rgba(255,140,66,0.15); color: var(--orange); }
+  .tier.t3 { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .tier.t4 { background: rgba(255,77,106,0.15); color: var(--red); }
+
+  .red-card p {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .red-card .metric {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 12px;
+    background: var(--surface2);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--green);
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-subtitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 24px 0 16px;
+    color: var(--cyan);
+  }
+
+  .full-width-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .full-width-card h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .full-width-card p {
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 12px;
+  }
+
+  .tool-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .tool-badge.core { background: rgba(0,212,255,0.2); color: var(--cyan); }
+  .tool-badge.standard { background: rgba(0,255,136,0.2); color: var(--green); }
+  .tool-badge.compliance { background: rgba(255,140,66,0.2); color: var(--orange); }
+  .tool-badge.enterprise { background: rgba(167,139,250,0.2); color: var(--purple); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Redundant AI Systems Architecture</h1>
+  <div class="subtitle">Botmaton — Multi-Industry Facility Intelligence Platform</div>
+  <div class="version">v3.0 — Updated February 2026 | 7-Tool Modular Architecture | 36-Table Schema</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showView('arch')">🔗 System Connections</div>
+  <div class="tab" onclick="showView('trees')">📁 Folder Trees</div>
+  <div class="tab" onclick="showView('integration')">🔄 Botmaton Integration</div>
+  <div class="tab" onclick="showView('redundancy')">🛡️ Redundancy & Failover</div>
+  <div class="tab" onclick="showView('automation')">⚙️ Figure Automation</div>
+</div>
+
+<!-- VIEW 1: ARCHITECTURE DIAGRAM -->
+<div class="view active" id="view-arch">
+  <div class="arch-container">
+    <svg class="arch-svg" viewBox="0 0 1200 730">
+      <defs>
+        <marker id="arrow-cyan" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#00d4ff"/></marker>
+        <marker id="arrow-orange" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ff8c42"/></marker>
+        <marker id="arrow-green" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#00ff88"/></marker>
+        <marker id="arrow-purple" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa"/></marker>
+        <marker id="arrow-yellow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24"/></marker>
+        <filter id="glow-cyan"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#00d4ff" flood-opacity="0.4"/></filter>
+        <filter id="glow-green"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#00ff88" flood-opacity="0.4"/></filter>
+        <filter id="glow-orange"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ff8c42" flood-opacity="0.4"/></filter>
+      </defs>
+
+      <!-- SYSTEM 1 BOUNDARY -->
+      <rect x="20" y="20" width="570" height="690" rx="16" fill="none" stroke="#2a3654" stroke-width="1.5" stroke-dasharray="6 3"/>
+      <text x="35" y="48" fill="#64748b" font-family="Outfit" font-size="13" font-weight="500">SYSTEM 1 — Local AI Infrastructure (Books 1–5)</text>
+
+      <!-- SYSTEM 2 BOUNDARY -->
+      <rect x="610" y="20" width="570" height="690" rx="16" fill="none" stroke="#2a3654" stroke-width="1.5" stroke-dasharray="6 3"/>
+      <text x="625" y="48" fill="#64748b" font-family="Outfit" font-size="13" font-weight="500">SYSTEM 2 — Botmaton Platform (Book 6) — Three-Layer Architecture</text>
+
+      <!-- DOCKER BOUNDARY -->
+      <rect x="40" y="220" width="530" height="470" rx="12" fill="rgba(0,255,136,0.03)" stroke="#00ff88" stroke-width="1" stroke-dasharray="4 2" opacity="0.5"/>
+      <text x="55" y="248" fill="#00ff88" font-family="JetBrains Mono" font-size="11" opacity="0.7">🐳 Docker Engine (Host OS)</text>
+
+      <!-- SYSTEM 1 NODES -->
+      <rect x="160" y="70" width="160" height="56" rx="10" fill="#111827" stroke="#00d4ff" stroke-width="2" filter="url(#glow-cyan)"/>
+      <text x="240" y="96" text-anchor="middle" fill="#00d4ff" font-family="Outfit" font-size="15" font-weight="700">Claude</text>
+      <text x="240" y="113" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">AI Assistant + MCP Client</text>
+
+      <rect x="390" y="70" width="140" height="56" rx="10" fill="#111827" stroke="#ff8c42" stroke-width="2" filter="url(#glow-orange)"/>
+      <text x="460" y="96" text-anchor="middle" fill="#ff8c42" font-family="Outfit" font-size="15" font-weight="700">N8N</text>
+      <text x="460" y="113" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">:5678 — Workflows</text>
+
+      <rect x="60" y="150" width="140" height="52" rx="8" fill="#111827" stroke="#00d4ff" stroke-width="1.5"/>
+      <text x="130" y="175" text-anchor="middle" fill="#00d4ff" font-family="Outfit" font-size="12" font-weight="500">MCP Servers</text>
+      <text x="130" y="191" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono" font-size="9">FS / Docker / Grafana / N8N</text>
+
+      <rect x="60" y="270" width="160" height="56" rx="10" fill="#1a2236" stroke="#ff8c42" stroke-width="1.5"/>
+      <text x="140" y="296" text-anchor="middle" fill="#ff8c42" font-family="Outfit" font-size="14" font-weight="700">Grafana</text>
+      <text x="140" y="313" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">:3001 — Dashboards</text>
+
+      <rect x="60" y="350" width="160" height="56" rx="10" fill="#1a2236" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="140" y="376" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="14" font-weight="700">InfluxDB</text>
+      <text x="140" y="393" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">:8086 — Time Series</text>
+
+      <rect x="60" y="430" width="160" height="56" rx="10" fill="#1a2236" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="140" y="456" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="14" font-weight="700">Telegraf</text>
+      <text x="140" y="473" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">Metrics Collector</text>
+
+      <rect x="280" y="270" width="160" height="56" rx="10" fill="#1a2236" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="360" y="296" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="14" font-weight="700">PostgreSQL</text>
+      <text x="360" y="313" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">:5432 — Relational DB</text>
+
+      <rect x="280" y="350" width="160" height="56" rx="10" fill="#1a2236" stroke="#00ff88" stroke-width="2" filter="url(#glow-green)"/>
+      <text x="360" y="376" text-anchor="middle" fill="#00ff88" font-family="Outfit" font-size="14" font-weight="700">Ollama</text>
+      <text x="360" y="393" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">:11434 — Local LLM</text>
+
+      <rect x="280" y="430" width="160" height="56" rx="10" fill="#1a2236" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="360" y="456" text-anchor="middle" fill="#fbbf24" font-family="Outfit" font-size="14" font-weight="700">Open WebUI</text>
+      <text x="360" y="473" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">:3000 — Chat Interface</text>
+
+      <rect x="170" y="580" width="220" height="52" rx="8" fill="#1a2236" stroke="#64748b" stroke-width="1"/>
+      <text x="280" y="606" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="12" font-weight="500">📂 /opt/ai-platform</text>
+      <text x="280" y="622" text-anchor="middle" fill="#4a5568" font-family="Outfit" font-size="10">Books, Configs, Data, Docs</text>
+
+      <!-- SYSTEM 2 - LAYER 1: CORE -->
+      <rect x="630" y="60" width="530" height="100" rx="10" fill="rgba(0,212,255,0.05)" stroke="#00d4ff" stroke-width="1" stroke-dasharray="4 2"/>
+      <text x="645" y="78" fill="#00d4ff" font-family="JetBrains Mono" font-size="10" opacity="0.7">LAYER 1 — BOTMATON CORE</text>
+
+      <rect x="650" y="90" width="160" height="56" rx="10" fill="#111827" stroke="#00d4ff" stroke-width="2.5" filter="url(#glow-cyan)"/>
+      <text x="730" y="114" text-anchor="middle" fill="#00d4ff" font-family="Outfit" font-size="15" font-weight="900">BOTMATON</text>
+      <text x="730" y="131" text-anchor="middle" fill="#00ff88" font-family="Outfit" font-size="10" font-weight="500">3D Cube + 7 Buttons</text>
+
+      <rect x="840" y="90" width="160" height="56" rx="10" fill="#111827" stroke="#00ff88" stroke-width="2" filter="url(#glow-green)"/>
+      <text x="920" y="114" text-anchor="middle" fill="#00ff88" font-family="Outfit" font-size="15" font-weight="700">Aura AI</text>
+      <text x="920" y="131" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">Voice + Training + Control</text>
+
+      <rect x="1020" y="90" width="120" height="56" rx="10" fill="#111827" stroke="#ff8c42" stroke-width="1.5"/>
+      <text x="1080" y="114" text-anchor="middle" fill="#ff8c42" font-family="Outfit" font-size="13" font-weight="700">API Layer</text>
+      <text x="1080" y="131" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="10">REST + Auth</text>
+
+      <!-- LAYER 2: TOOLS -->
+      <rect x="630" y="175" width="530" height="130" rx="10" fill="rgba(167,139,250,0.05)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4 2"/>
+      <text x="645" y="193" fill="#a78bfa" font-family="JetBrains Mono" font-size="10" opacity="0.7">LAYER 2 — MODULAR TOOLS (7 Tools on Tools Face)</text>
+
+      <rect x="650" y="205" width="105" height="44" rx="6" fill="#1a2236" stroke="#a78bfa" stroke-width="1"/>
+      <text x="702" y="224" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="10" font-weight="600">Facility</text>
+      <text x="702" y="238" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">Builder</text>
+
+      <rect x="765" y="205" width="105" height="44" rx="6" fill="#1a2236" stroke="#a78bfa" stroke-width="1"/>
+      <text x="817" y="224" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="10" font-weight="600">Maintenance</text>
+      <text x="817" y="238" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">Manager</text>
+
+      <rect x="880" y="205" width="105" height="44" rx="6" fill="#1a2236" stroke="#a78bfa" stroke-width="1"/>
+      <text x="932" y="224" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="10" font-weight="600">LOTO</text>
+      <text x="932" y="238" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">Builder</text>
+
+      <rect x="995" y="205" width="105" height="44" rx="6" fill="#1a2236" stroke="#a78bfa" stroke-width="1"/>
+      <text x="1047" y="224" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="10" font-weight="600">Compliance</text>
+      <text x="1047" y="238" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">Tracker</text>
+
+      <rect x="650" y="255" width="105" height="44" rx="6" fill="#1a2236" stroke="#a78bfa" stroke-width="1"/>
+      <text x="702" y="274" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="10" font-weight="600">Cube</text>
+      <text x="702" y="288" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">Configurator</text>
+
+      <rect x="765" y="255" width="105" height="44" rx="6" fill="#1a2236" stroke="#a78bfa" stroke-width="1"/>
+      <text x="817" y="274" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="10" font-weight="600">Report</text>
+      <text x="817" y="288" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">Builder</text>
+
+      <rect x="880" y="255" width="105" height="44" rx="6" fill="#1a2236" stroke="#a78bfa" stroke-width="1"/>
+      <text x="932" y="274" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="10" font-weight="600">Import</text>
+      <text x="932" y="288" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">Migration</text>
+
+      <rect x="995" y="255" width="105" height="44" rx="6" fill="#1a2236" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="1047" y="274" text-anchor="middle" fill="#fbbf24" font-family="Outfit" font-size="10" font-weight="600">Facility Map</text>
+      <text x="1047" y="288" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="8">7th Button</text>
+
+      <!-- DATABASE LAYER -->
+      <rect x="630" y="320" width="530" height="120" rx="10" fill="rgba(167,139,250,0.03)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4 2"/>
+      <text x="645" y="338" fill="#a78bfa" font-family="JetBrains Mono" font-size="10" opacity="0.7">DATA LAYER — 36 Tables Across 8 Domains</text>
+
+      <rect x="650" y="355" width="200" height="56" rx="10" fill="#1a2236" stroke="#a78bfa" stroke-width="2"/>
+      <text x="750" y="378" text-anchor="middle" fill="#a78bfa" font-family="Outfit" font-size="14" font-weight="700">PostgreSQL</text>
+      <text x="750" y="398" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="9">36 Tables | Users, Equipment, WOs...</text>
+
+      <rect x="870" y="355" width="130" height="56" rx="10" fill="#1a2236" stroke="#ff4d6a" stroke-width="1.5" stroke-dasharray="4 2"/>
+      <text x="935" y="378" text-anchor="middle" fill="#ff4d6a" font-family="Outfit" font-size="13" font-weight="700">Redis</text>
+      <text x="935" y="398" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="9">:6379 — Cache (Optional)</text>
+
+      <rect x="1020" y="355" width="120" height="56" rx="10" fill="#1a2236" stroke="#64748b" stroke-width="1"/>
+      <text x="1080" y="378" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="12" font-weight="600">Documents</text>
+      <text x="1080" y="398" text-anchor="middle" fill="#4a5568" font-family="Outfit" font-size="9">File Storage</text>
+
+      <!-- INTEGRATION LAYER -->
+      <rect x="630" y="455" width="530" height="100" rx="10" fill="rgba(255,140,66,0.03)" stroke="#ff8c42" stroke-width="1" stroke-dasharray="4 2"/>
+      <text x="645" y="473" fill="#ff8c42" font-family="JetBrains Mono" font-size="10" opacity="0.7">INTEGRATION LAYER — Shared with System 1</text>
+
+      <rect x="650" y="490" width="140" height="50" rx="10" fill="#1a2236" stroke="#ff8c42" stroke-width="1.5"/>
+      <text x="720" y="513" text-anchor="middle" fill="#ff8c42" font-family="Outfit" font-size="13" font-weight="700">N8N</text>
+      <text x="720" y="528" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="9">Workflows</text>
+
+      <rect x="810" y="490" width="140" height="50" rx="10" fill="#1a2236" stroke="#ff8c42" stroke-width="1.5"/>
+      <text x="880" y="513" text-anchor="middle" fill="#ff8c42" font-family="Outfit" font-size="13" font-weight="700">Grafana</text>
+      <text x="880" y="528" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="9">Dashboards</text>
+
+      <rect x="970" y="490" width="140" height="50" rx="10" fill="#1a2236" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="1040" y="513" text-anchor="middle" fill="#fbbf24" font-family="Outfit" font-size="13" font-weight="700">ElevenLabs</text>
+      <text x="1040" y="528" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="9">Voice TTS (Cloud)</text>
+
+      <rect x="680" y="580" width="300" height="52" rx="8" fill="#1a2236" stroke="#64748b" stroke-width="1"/>
+      <text x="830" y="606" text-anchor="middle" fill="#64748b" font-family="Outfit" font-size="12" font-weight="500">📂 /srv/botmaton</text>
+      <text x="830" y="622" text-anchor="middle" fill="#4a5568" font-family="Outfit" font-size="10">Source, Uploads, Configs, Templates</text>
+
+      <!-- CONNECTIONS -->
+      <path d="M 200 126 L 140 150" class="connection-line mcp" marker-end="url(#arrow-cyan)"/>
+      <path d="M 320 98 L 390 98" class="connection-line mcp" marker-end="url(#arrow-cyan)"/>
+      <path d="M 130 202 L 130 270" class="connection-line mcp" marker-end="url(#arrow-cyan)"/>
+      <path d="M 140 326 L 140 350" class="connection-line data" marker-end="url(#arrow-purple)"/>
+      <path d="M 140 430 L 140 406" class="connection-line data" marker-end="url(#arrow-purple)"/>
+      <path d="M 460 126 L 460 180 Q 460 200 440 200 L 380 200 Q 360 200 360 220 L 360 350" class="connection-line api" marker-end="url(#arrow-orange)"/>
+      <path d="M 360 430 L 360 406" class="connection-line api" marker-end="url(#arrow-orange)"/>
+
+      <!-- Cross-system: Shared Ollama -->
+      <path d="M 440 378 Q 550 378 550 320 Q 550 260 590 200 Q 610 175 700 175 L 900 175 Q 920 175 920 160" class="connection-line api" stroke-width="3" opacity="0.8" marker-end="url(#arrow-orange)"/>
+      <text x="560" y="250" fill="#ff8c42" font-family="JetBrains Mono" font-size="9" text-anchor="middle" transform="rotate(-15 560 250)">Shared Ollama :11434</text>
+
+      <path d="M 810 118 L 840 118" class="connection-line api" marker-end="url(#arrow-orange)"/>
+      <path d="M 1000 118 L 1020 118" class="connection-line api" marker-end="url(#arrow-orange)"/>
+      <path d="M 750 299 L 750 355" class="connection-line data" marker-end="url(#arrow-purple)" opacity="0.4"/>
+      <path d="M 960 146 Q 1000 160 1040 180 Q 1080 200 1080 300 Q 1080 400 1060 450 Q 1040 480 1040 490" class="connection-line web" marker-end="url(#arrow-yellow)"/>
+      <path d="M 460 126 Q 530 140 580 200 Q 600 230 640 400 Q 660 460 660 490" class="connection-line api" stroke-width="2" opacity="0.5" stroke-dasharray="6 3"/>
+      <text x="540" y="280" fill="#ff8c42" font-family="JetBrains Mono" font-size="8" opacity="0.6" transform="rotate(70 540 280)">shared workflows</text>
+    </svg>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-line" style="background:var(--cyan); background-image: repeating-linear-gradient(90deg, var(--cyan) 0 8px, transparent 8px 12px);"></div> MCP Protocol</div>
+    <div class="legend-item"><div class="legend-line" style="background:var(--orange);"></div> REST API</div>
+    <div class="legend-item"><div class="legend-line" style="background:var(--purple);"></div> Data Flow</div>
+    <div class="legend-item"><div class="legend-line" style="background:var(--green); background-image: repeating-linear-gradient(90deg, var(--green) 0 4px, transparent 4px 6px);"></div> Docker Network</div>
+    <div class="legend-item"><div class="legend-line" style="background:var(--yellow); background-image: repeating-linear-gradient(90deg, var(--yellow) 0 12px, transparent 12px 16px);"></div> External / Cloud</div>
+  </div>
+</div>
+
+<!-- VIEW 2: FOLDER TREES -->
+<div class="view" id="view-trees">
+  <div class="trees-grid">
+    <div class="tree-panel">
+      <div class="tree-header"><div class="dot" style="background:var(--cyan)"></div> System 1 — Local AI Infrastructure</div>
+      <div class="tree-body"><span class="dir">/opt/ai-platform/</span>                    <span class="special">← host server root</span>
+├── <span class="dir">data/</span>
+│   ├── <span class="dir">facility-knowledge/</span>           <span class="special">← industry knowledge base</span>
+│   │   ├── <span class="dir">procedures/</span>
+│   │   │   ├── <span class="file">loto-templates/</span>
+│   │   │   ├── <span class="file">sops/</span>
+│   │   │   └── <span class="file">permits/</span>
+│   │   ├── <span class="dir">equipment/</span>
+│   │   │   ├── <span class="file">manuals/</span>
+│   │   │   └── <span class="file">specifications/</span>
+│   │   ├── <span class="dir">safety/</span>
+│   │   │   ├── <span class="file">sds-sheets/</span>
+│   │   │   └── <span class="file">incident-reports/</span>
+│   │   └── <span class="dir">environmental/</span>
+│   │       ├── <span class="file">permits/</span>
+│   │       └── <span class="file">monitoring/</span>
+│   ├── <span class="dir">embeddings/</span>                   <span class="special">← RAG vector store</span>
+│   │   └── <span class="file">facility-index.db</span>
+│   └── <span class="dir">uploads/</span>                      <span class="special">← user-uploaded docs</span>
+│
+├── <span class="dir">docker/</span>
+│   ├── <span class="docker">docker-compose.yml</span>
+│   ├── <span class="dir">grafana/</span>
+│   │   ├── <span class="config">grafana.ini</span>
+│   │   └── <span class="dir">provisioning/</span>
+│   ├── <span class="dir">influxdb/</span>
+│   │   └── <span class="dir">data/</span>
+│   ├── <span class="dir">telegraf/</span>
+│   │   └── <span class="config">telegraf.conf</span>
+│   ├── <span class="dir">n8n/</span>
+│   │   └── <span class="dir">data/</span>
+│   ├── <span class="dir">postgres/</span>
+│   │   └── <span class="dir">data/</span>
+│   └── <span class="dir">open-webui/</span>
+│       └── <span class="dir">data/</span>
+│
+├── <span class="dir">config/</span>
+│   ├── <span class="config">mcp-config.yaml</span>             <span class="special">← MCP server definitions</span>
+│   └── <span class="config">mcp-secrets.yaml</span>            <span class="special">← API tokens (gitignored)</span>
+│
+├── <span class="dir">backups/</span>
+│   ├── <span class="dir">daily/</span>                        <span class="special">← automated DB snapshots</span>
+│   ├── <span class="dir">weekly/</span>
+│   └── <span class="file">backup.sh</span>
+│
+└── <span class="dir">tools/</span>
+    ├── <span class="file">health-check.sh</span>              <span class="special">← service status monitor</span>
+    ├── <span class="file">failover.sh</span>                  <span class="special">← auto-failover trigger</span>
+    └── <span class="file">restore.sh</span>                   <span class="special">← disaster recovery</span></div>
+    </div>
+
+    <div class="tree-panel">
+      <div class="tree-header"><div class="dot" style="background:var(--green)"></div> System 2 — Botmaton Platform (7-Tool Architecture)</div>
+      <div class="tree-body"><span class="dir">botmaton/</span>                              <span class="special">← GitHub repo root</span>
+├── <span class="dir">prototypes/</span>
+│   ├── <span class="file">botmaton-v2-aura.html</span>         <span class="special">← current live version</span>
+│   └── <span class="file">botmaton-v1.html</span>              <span class="file">(archived)</span>
+│
+├── <span class="dir">src/</span>                                <span class="special">← production source</span>
+│   ├── <span class="dir">frontend/</span>
+│   │   ├── <span class="dir">css/</span>
+│   │   ├── <span class="dir">js/</span>
+│   │   │   ├── <span class="file">AudioReactiveSystem.js</span>
+│   │   │   ├── <span class="file">ParticleNetwork.js</span>
+│   │   │   ├── <span class="file">BotmatonCube.js</span>
+│   │   │   └── <span class="file">AuraEngine.js</span>
+│   │   └── <span class="dir">assets/</span>
+│   │
+│   ├── <span class="dir">api/</span>                            <span class="special">← REST API layer</span>
+│   │   ├── <span class="file">server.js</span>
+│   │   ├── <span class="dir">routes/</span>
+│   │   │   ├── <span class="file">auth.js</span>               <span class="special">← users, sessions, RBAC</span>
+│   │   │   ├── <span class="file">facilities.js</span>         <span class="special">← spatial hierarchy</span>
+│   │   │   ├── <span class="file">equipment.js</span>          <span class="special">← equipment + components</span>
+│   │   │   ├── <span class="file">notifications.js</span>      <span class="special">← in-app notifications</span>
+│   │   │   ├── <span class="file">documents.js</span>          <span class="special">← file management</span>
+│   │   │   ├── <span class="file">audit.js</span>              <span class="special">← audit trail queries</span>
+│   │   │   └── <span class="file">aura.js</span>               <span class="special">← AI query endpoint</span>
+│   │   ├── <span class="dir">middleware/</span>
+│   │   │   ├── <span class="file">auth.js</span>
+│   │   │   ├── <span class="file">rbac.js</span>               <span class="special">← role-based access</span>
+│   │   │   └── <span class="file">audit.js</span>              <span class="special">← auto-logging</span>
+│   │   └── <span class="dir">services/</span>
+│   │       ├── <span class="file">ollama.js</span>             <span class="special">← AI failover chain</span>
+│   │       └── <span class="file">notifications.js</span>
+│   │
+│   ├── <span class="dir">tools/</span>                          <span class="tool">← 7 MODULAR TOOLS</span>
+│   │   ├── <span class="dir">facility-builder/</span>          <span class="tool">← Canvas spatial editor</span>
+│   │   │   ├── <span class="file">routes.js</span>
+│   │   │   ├── <span class="file">service.js</span>
+│   │   │   └── <span class="dir">components/</span>
+│   │   │
+│   │   ├── <span class="dir">maintenance-manager/</span>       <span class="tool">← Full CMMS</span>
+│   │   │   ├── <span class="file">routes.js</span>
+│   │   │   ├── <span class="file">work-orders.js</span>
+│   │   │   ├── <span class="file">pm-scheduler.js</span>
+│   │   │   ├── <span class="file">parts-inventory.js</span>
+│   │   │   └── <span class="file">downtime.js</span>
+│   │   │
+│   │   ├── <span class="dir">loto-builder/</span>              <span class="tool">← Lockout-Tagout</span>
+│   │   │   ├── <span class="file">routes.js</span>
+│   │   │   ├── <span class="file">procedures.js</span>
+│   │   │   └── <span class="file">verifications.js</span>
+│   │   │
+│   │   ├── <span class="dir">compliance-tracker/</span>        <span class="tool">← Regulatory tracking</span>
+│   │   │   ├── <span class="file">routes.js</span>
+│   │   │   ├── <span class="file">requirements.js</span>
+│   │   │   ├── <span class="file">inspections.js</span>
+│   │   │   ├── <span class="file">training.js</span>
+│   │   │   └── <span class="file">incidents.js</span>
+│   │   │
+│   │   ├── <span class="dir">cube-configurator/</span>         <span class="tool">← Face/tile customization</span>
+│   │   │   ├── <span class="file">routes.js</span>
+│   │   │   └── <span class="file">layouts.js</span>
+│   │   │
+│   │   ├── <span class="dir">report-builder/</span>            <span class="tool">← Scheduled reports</span>
+│   │   │   ├── <span class="file">routes.js</span>
+│   │   │   ├── <span class="file">templates.js</span>
+│   │   │   ├── <span class="file">scheduler.js</span>
+│   │   │   └── <span class="file">ai-summary.js</span>
+│   │   │
+│   │   └── <span class="dir">import-migration/</span>          <span class="tool">← CSV/data import</span>
+│   │       ├── <span class="file">routes.js</span>
+│   │       ├── <span class="file">parsers.js</span>
+│   │       └── <span class="file">field-mapping.js</span>
+│   │
+│   └── <span class="dir">aura/</span>                           <span class="special">← AI engine</span>
+│       ├── <span class="file">personality.json</span>
+│       ├── <span class="file">query-patterns.json</span>
+│       ├── <span class="file">system-prompt.txt</span>
+│       ├── <span class="file">training-content.json</span>     <span class="special">← Aura IS the training system</span>
+│       └── <span class="dir">rag/</span>
+│           ├── <span class="file">indexer.js</span>
+│           └── <span class="file">retriever.js</span>
+│
+├── <span class="dir">db/</span>                                  <span class="special">← 36 Tables / 8 Domains</span>
+│   ├── <span class="dir">migrations/</span>
+│   │   ├── <span class="file">001_core_platform.sql</span>     <span class="special">← users, roles, sessions, audit</span>
+│   │   ├── <span class="file">002_facilities_spatial.sql</span><span class="special">← facilities, buildings, areas</span>
+│   │   ├── <span class="file">003_equipment.sql</span>         <span class="special">← equipment, components</span>
+│   │   ├── <span class="file">004_maintenance.sql</span>       <span class="special">← work_orders, pm_schedules, parts</span>
+│   │   ├── <span class="file">005_loto.sql</span>              <span class="special">← procedures, energy_sources, steps</span>
+│   │   ├── <span class="file">006_compliance.sql</span>        <span class="special">← requirements, inspections, training</span>
+│   │   ├── <span class="file">007_reports.sql</span>           <span class="special">← templates, scheduled, history</span>
+│   │   └── <span class="file">008_import.sql</span>            <span class="special">← jobs, field_mappings</span>
+│   │
+│   └── <span class="dir">seeds/</span>
+│       ├── <span class="file">001_roles_config.sql</span>      <span class="special">← admin/manager/tech/viewer</span>
+│       └── <span class="dir">templates/</span>                <span class="special">← Industry starter data</span>
+│           ├── <span class="file">lumber-mill.sql</span>
+│           ├── <span class="file">manufacturing.sql</span>
+│           ├── <span class="file">food-processing.sql</span>
+│           ├── <span class="file">chemical-plant.sql</span>
+│           ├── <span class="file">energy-utilities.sql</span>
+│           ├── <span class="file">logistics-warehouse.sql</span>
+│           └── <span class="file">water-wastewater.sql</span>
+│
+├── <span class="dir">docker/</span>
+│   ├── <span class="docker">docker-compose.yml</span>
+│   ├── <span class="docker">Dockerfile.web</span>
+│   ├── <span class="docker">Dockerfile.api</span>
+│   └── <span class="dir">nginx/</span>
+│       └── <span class="config">nginx.conf</span>
+│
+├── <span class="dir">config/</span>
+│   ├── <span class="config">cube-default.json</span>            <span class="special">← 6 faces + 7th button layout</span>
+│   ├── <span class="config">aura-config.json</span>             <span class="special">← voice + personality + failover</span>
+│   └── <span class="dir">industry-templates/</span>          <span class="special">← 7 industry presets</span>
+│       ├── <span class="config">lumber-wood.json</span>
+│       ├── <span class="config">food-beverage.json</span>
+│       ├── <span class="config">chemical-petrochem.json</span>
+│       ├── <span class="config">general-manufacturing.json</span>
+│       ├── <span class="config">water-wastewater.json</span>
+│       ├── <span class="config">energy-utilities.json</span>
+│       └── <span class="config">logistics-warehouse.json</span>
+│
+├── <span class="dir">docs/</span>
+│   ├── <span class="file">README.md</span>
+│   └── <span class="dir">reference/</span>
+│       ├── <span class="file">BOTMATON_PLANNING.md</span>
+│       └── <span class="file">DATABASE_SCHEMA.md</span>
+│
+├── <span class="file">LICENSE</span>
+└── <span class="file">README.md</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW 3: BOTMATON INTEGRATION -->
+<div class="view" id="view-integration">
+  <div class="integration-grid">
+    <div class="int-card">
+      <h3>🏗️ Three-Layer Architecture</h3>
+      <p>Botmaton is built on a three-layer architecture where each layer has distinct responsibilities. The Core provides the foundation, Tools deliver modular functionality, and the Interactive Facility Map serves as the primary operational view accessed via the 7th navigation button.</p>
+      <div class="flow-diagram">
+<span style="color:var(--cyan)">┌─────────────────────────────────────────────────────────────────────┐</span>
+<span style="color:var(--cyan)">│                    LAYER 1: BOTMATON CORE                           │</span>
+<span style="color:var(--cyan)">│  3D Cube Interface │ Aura AI │ API Layer │ RBAC │ Audit │ Notify   │</span>
+<span style="color:var(--cyan)">└─────────────────────────────────────────────────────────────────────┘</span>
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+<span style="color:var(--purple)">┌───────────────────┐ ┌───────────────────┐ ┌───────────────────┐</span>
+<span style="color:var(--purple)">│ LAYER 2: TOOLS    │ │ LAYER 2: TOOLS    │ │ LAYER 2: TOOLS    │</span>
+<span style="color:var(--purple)">│ Facility Builder  │ │ Maintenance Mgr   │ │ LOTO Builder      │</span>
+<span style="color:var(--purple)">│ Compliance Track  │ │ Report Builder    │ │ Import/Migration  │</span>
+<span style="color:var(--purple)">│ Cube Configurator │ │                   │ │                   │</span>
+<span style="color:var(--purple)">└───────────────────┘ └───────────────────┘ └───────────────────┘</span>
+                                    │
+                                    ▼
+<span style="color:var(--yellow)">┌─────────────────────────────────────────────────────────────────────┐</span>
+<span style="color:var(--yellow)">│              LAYER 3: INTERACTIVE FACILITY MAP                      │</span>
+<span style="color:var(--yellow)">│   7th Button │ 5-Level Drill-Down │ Live Status │ Spatial Queries   │</span>
+<span style="color:var(--yellow)">└─────────────────────────────────────────────────────────────────────┘</span>
+
+<span style="color:var(--green)">7 Navigation Buttons:</span>
+  1. Administration  🏢  │  4. Maintenance   🔧  │  7. Facility Map 🗺️
+  2. Safety          🛡️  │  5. Environmental 🌿  │     (Full-screen view)
+  3. Production      🏭  │  6. Tools         ⚙️  │</div>
+    </div>
+
+    <div class="int-card">
+      <h3>🗄️ Database Schema — 36 Tables Across 8 Domains</h3>
+      <p>The complete database schema supports all platform functionality with proper foreign key relationships, audit trails, and soft deletes. Every table includes <code>created_at</code>, <code>updated_at</code>, <code>created_by</code>, and <code>updated_by</code> columns for full traceability.</p>
+      <table class="schema-table">
+        <thead>
+          <tr><th>Domain</th><th>Tables</th><th>Key Tables</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="domain">Core Platform</td><td class="count">8</td><td>users, roles, sessions, audit_log, notifications, documents, system_config, translations</td></tr>
+          <tr><td class="domain">Facility & Spatial</td><td class="count">4</td><td>facilities, buildings, areas, spatial_metadata</td></tr>
+          <tr><td class="domain">Equipment</td><td class="count">3</td><td>equipment, components, equipment_documents</td></tr>
+          <tr><td class="domain">Maintenance Manager</td><td class="count">7</td><td>work_orders, pm_schedules, pm_tasks, parts, parts_equipment, inventory_transactions, downtime_events</td></tr>
+          <tr><td class="domain">LOTO Builder</td><td class="count">4</td><td>loto_procedures, loto_energy_sources, loto_isolation_steps, loto_verifications</td></tr>
+          <tr><td class="domain">Compliance Tracker</td><td class="count">5</td><td>regulatory_requirements, inspections, training_certifications, incidents, incident_actions</td></tr>
+          <tr><td class="domain">Report Builder</td><td class="count">3</td><td>report_templates, scheduled_reports, report_history</td></tr>
+          <tr><td class="domain">Import/Migration</td><td class="count">2</td><td>import_jobs, import_field_mappings</td></tr>
+        </tbody>
+      </table>
+      <div class="flow-diagram">
+<span style="color:var(--cyan)">Central Entity Relationships:</span>
+
+                              ┌──────────────┐
+                              │    users     │
+                              └──────┬───────┘
+                                     │ created_by / assigned_to
+          ┌──────────────────────────┼──────────────────────────┐
+          ▼                          ▼                          ▼
+    ┌───────────┐            ┌───────────────┐          ┌───────────────┐
+    │ audit_log │            │ notifications │          │   documents   │
+    └───────────┘            └───────────────┘          └───────┬───────┘
+                                                                │
+    ┌───────────────────────────────────────────────────────────┼───────┐
+    │                                                           │       │
+    ▼                          ▼                                ▼       │
+┌────────────┐    ┌────────────┐    ┌──────────┐    ┌───────────────────┘
+│ facilities │───▶│ buildings  │───▶│  areas   │───▶│     equipment     │
+└────────────┘    └────────────┘    └──────────┘    └──┬───┬───┬───┬────┘
+                                                       │   │   │   │
+        ┌──────────────────────────────────────────────┘   │   │   │
+        ▼                  ▼                    ▼           │   │   │
+  ┌───────────┐   ┌─────────────┐   ┌─────────────────┐    │   │   │
+  │components │   │ work_orders │   │ loto_procedures │    │   │   │
+  └───────────┘   └─────────────┘   └─────────────────┘    │   │   │
+                                                           │   │   │
+                  ┌────────────────────────────────────────┘   │   │
+                  ▼                            ▼               │   │
+          ┌─────────────┐            ┌─────────────┐          │   │
+          │pm_schedules │            │ inspections │          │   │
+          └─────────────┘            └─────────────┘          │   │
+
+<span style="color:var(--green)">equipment table is the central hub — maintenance, LOTO,</span>
+<span style="color:var(--green)">compliance, documents, and facility map all connect through it.</span></div>
+    </div>
+
+    <div class="int-card">
+      <h3>🛠️ 7 Modular Tools — Licensing Tiers</h3>
+      <p>Each tool is independently deployable and follows a modular architecture. Tools are sold in tiered bundles or individually (à la carte). All tools plug into the Core platform and share the central database schema.</p>
+      <div style="margin: 16px 0;">
+        <span class="tool-badge core">CORE</span> Base platform (free/low cost)
+        <span class="tool-badge standard">STANDARD</span> Small-to-mid facilities
+        <span class="tool-badge compliance">COMPLIANCE</span> Regulated industries
+        <span class="tool-badge enterprise">ENTERPRISE</span> Large/multi-site operations
+      </div>
+      <div class="flow-diagram">
+<span style="color:var(--cyan)">Tool                    │ Tier        │ Dependencies</span>
+────────────────────────┼─────────────┼──────────────────────────
+<span style="color:var(--green)">Facility Builder</span>        │ Standard+   │ Core only
+<span style="color:var(--green)">Maintenance Manager</span>     │ Standard+   │ Core (recommends Facility Builder)
+<span style="color:var(--green)">Cube Configurator</span>       │ Standard+   │ Core only
+<span style="color:var(--green)">Import/Migration Tool</span>   │ Standard+   │ Core (recommends Maintenance Mgr)
+<span style="color:var(--orange)">LOTO Builder</span>            │ Compliance+ │ Core + Facility Builder (required)
+<span style="color:var(--orange)">Compliance Tracker</span>      │ Compliance+ │ Core (recommends Maintenance Mgr)
+<span style="color:var(--purple)">Report Builder</span>          │ Enterprise  │ Core only
+
+<span style="color:var(--yellow)">Industry Template Packs (7 available):</span>
+  🪵 Lumber/Wood Products    🍔 Food & Beverage    ⚗️ Chemical/Petrochem
+  🏭 General Manufacturing   💧 Water/Wastewater   ⚡ Energy/Utilities
+  📦 Logistics/Warehousing</div>
+    </div>
+
+    <div class="int-card">
+      <h3>🤖 Aura AI — Full Platform Intelligence</h3>
+      <p>Aura is not just a voice assistant — she is the facility operations AI with full platform access, backend control, issue resolution capability, AND serves as the training/onboarding system. There is no separate guided tour; Aura teaches users how to use every tool.</p>
+      <div class="flow-diagram">
+<span style="color:var(--green)">Aura Capabilities:</span>
+
+<span style="color:var(--cyan)">QUERY</span> — "What's the status of Kiln Unit 2?"
+  → Queries equipment table + work_orders + downtime_events
+  → Returns comprehensive status with open WOs and recent downtime
+
+<span style="color:var(--cyan)">CONTROL</span> — "Create a work order for the kiln fan motor"
+  → POST /api/tools/maintenance/work-orders
+  → Creates corrective work order, assigns to default technician
+
+<span style="color:var(--cyan)">NAVIGATE</span> — "Show me the LOTO procedure for the boiler"
+  → Rotates cube to Safety face
+  → Opens LOTO Builder panel with boiler procedure
+
+<span style="color:var(--cyan)">TRAIN</span> — "I'm new here, give me a tour"
+  → Rotates cube, explains each face
+  → Demonstrates key features based on user's role
+
+<span style="color:var(--cyan)">RESOLVE</span> — "The compressor pressure is dropping"
+  → Checks sensor data (InfluxDB)
+  → Reviews maintenance history (PostgreSQL)
+  → Correlates with similar equipment issues
+  → Recommends actions or creates predictive WO</div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW 4: REDUNDANCY & FAILOVER -->
+<div class="view" id="view-redundancy">
+  <h2 class="section-title">🛡️ Redundancy & Failover Architecture</h2>
+  <p style="color:var(--muted); margin-bottom:24px; font-weight:300; line-height:1.7;">Botmaton is designed for industrial environments where downtime directly impacts safety and operations. The redundancy architecture ensures Aura AI and critical facility data remain available through a multi-tier failover strategy.</p>
+
+  <div class="section-subtitle">Tier 1 — AI Model Failover Chain</div>
+  <div class="redundancy-grid">
+    <div class="red-card">
+      <h4>🟢 Primary: Local Ollama</h4>
+      <div class="tier t1">TIER 1 — LOCAL</div>
+      <p>The primary AI backend is a locally-hosted Ollama instance running on the facility's own hardware. This provides zero-latency responses, full data privacy, and complete offline capability.</p>
+      <div class="metric">Latency: ~200ms | Uptime target: 99.5%</div>
+    </div>
+    <div class="red-card">
+      <h4>🟡 Secondary: Remote Ollama</h4>
+      <div class="tier t2">TIER 2 — REMOTE</div>
+      <p>If the local Ollama instance becomes unavailable, Botmaton API automatically fails over to a remote Ollama instance — a secondary on-premise server, company data center, or VPS.</p>
+      <div class="metric">Latency: ~500ms | Failover trigger: 3 consecutive failures</div>
+    </div>
+    <div class="red-card">
+      <h4>🟠 Tertiary: Cloud LLM API</h4>
+      <div class="tier t3">TIER 3 — CLOUD</div>
+      <p>If both local and remote Ollama instances are unavailable, Botmaton can route Aura queries to a cloud LLM API (OpenAI, Anthropic, etc.). Sensitive facility data can be filtered before sending.</p>
+      <div class="metric">Latency: ~800ms | Data filtering: configurable</div>
+    </div>
+    <div class="red-card">
+      <h4>🔴 Fallback: Static Response Engine</h4>
+      <div class="tier t4">TIER 4 — OFFLINE</div>
+      <p>When all AI backends are unreachable, Aura falls back to the built-in static response engine — <code>findBestMatch()</code> pattern matching. No AI generation, but the platform remains functional.</p>
+      <div class="metric">Latency: &lt;50ms | Always available | Zero network dependency</div>
+    </div>
+  </div>
+
+  <div class="section-subtitle">Tier 2 — Voice System Failover</div>
+  <div class="redundancy-grid">
+    <div class="red-card">
+      <h4>🔊 TTS Failover Chain</h4>
+      <div class="tier t1">VOICE OUTPUT</div>
+      <p>Aura's voice output: ElevenLabs (premium cloud) → Piper TTS (local Docker) → Web Speech API (browser). Audio-reactive visuals work with all three.</p>
+      <div class="flow-diagram" style="font-size:0.75rem; line-height:1.6; padding:14px;">ElevenLabs API  ──→  Piper TTS (Docker)  ──→  Web Speech API
+   (cloud)              (local, offline)         (browser built-in)</div>
+    </div>
+    <div class="red-card">
+      <h4>🎤 STT Failover Chain</h4>
+      <div class="tier t1">VOICE INPUT</div>
+      <p>Speech-to-text: Whisper.cpp (local GPU) → Whisper via Ollama → Web Speech Recognition API. Wake word detection runs independently.</p>
+      <div class="flow-diagram" style="font-size:0.75rem; line-height:1.6; padding:14px;">Whisper.cpp (local)  ──→  Whisper via Ollama  ──→  Web Speech API
+   (GPU accelerated)        (CPU fallback)           (browser built-in)</div>
+    </div>
+  </div>
+
+  <div class="section-subtitle">Tier 3 — Data & Service Redundancy</div>
+  <div class="redundancy-grid">
+    <div class="red-card">
+      <h4>💾 Database Redundancy</h4>
+      <div class="tier t2">DATA LAYER</div>
+      <p>PostgreSQL (36 tables) with automated daily backups, WAL archiving, and optional streaming replication. Redis (optional) for session caching with RDB + AOF persistence.</p>
+      <div class="metric">RPO: 1 hour | RTO: 15 minutes | Retention: 30 days</div>
+    </div>
+    <div class="red-card">
+      <h4>🐳 Docker Health Monitoring</h4>
+      <div class="tier t2">INFRASTRUCTURE</div>
+      <p>Every service includes health checks. Telegraf monitors containers. N8N triggers alerts when services degrade. Docker Compose restart policies handle transient failures.</p>
+      <div class="metric">Health check interval: 30s | Auto-restart: on-failure (max 5)</div>
+    </div>
+    <div class="red-card">
+      <h4>📡 Network Resilience</h4>
+      <div class="tier t3">CONNECTIVITY</div>
+      <p>Botmaton is offline-first. Frontend works without network. Aura degrades gracefully through failover tiers. Queued actions sync on reconnection.</p>
+      <div class="metric">Offline: Full UI + Tier 4 AI | Sync: automatic on reconnect</div>
+    </div>
+    <div class="red-card">
+      <h4>🔒 Security & Access Control</h4>
+      <div class="tier t3">SECURITY</div>
+      <p>Isolated Docker networks. TLS via nginx. JWT authentication with RBAC (Admin, Manager, Technician, Viewer). Ollama and PostgreSQL never exposed publicly.</p>
+      <div class="metric">Internal: Docker bridge | External: TLS + JWT + RBAC</div>
+    </div>
+  </div>
+
+  <div class="full-width-card">
+    <h3>📋 Failover Decision Flow</h3>
+    <p>The Botmaton API implements a unified failover manager that routes requests through the tier chain. Each tier has configurable timeout, retry count, and health thresholds.</p>
+    <div class="flow-diagram">
+<span style="color:var(--cyan)">┌─────────────────────────────────────────────────────────────────────────┐</span>
+<span style="color:var(--cyan)">│                     AURA QUERY RECEIVED                                 │</span>
+<span style="color:var(--cyan)">└──────────────────────────┬──────────────────────────────────────────────┘</span>
+                           ▼
+                  <span style="color:var(--green)">┌─────────────────┐</span>
+                  <span style="color:var(--green)">│ Local Ollama OK? │</span>
+                  <span style="color:var(--green)">└────┬───────┬────┘</span>
+                  YES ▼       ▼ NO
+           <span style="color:var(--green)">┌──────────┐</span>  <span style="color:var(--orange)">┌──────────────────┐</span>
+           <span style="color:var(--green)">│ RESPOND  │</span>  <span style="color:var(--orange)">│ Remote Ollama OK? │</span>
+           <span style="color:var(--green)">└──────────┘</span>  <span style="color:var(--orange)">└────┬────────┬────┘</span>
+                       YES ▼        ▼ NO
+                <span style="color:var(--orange)">┌──────────┐</span>  <span style="color:var(--yellow)">┌────────────────┐</span>
+                <span style="color:var(--orange)">│ RESPOND  │</span>  <span style="color:var(--yellow)">│ Cloud API OK?  │</span>
+                <span style="color:var(--orange)">└──────────┘</span>  <span style="color:var(--yellow)">└────┬──────┬───┘</span>
+                            YES ▼      ▼ NO
+                     <span style="color:var(--yellow)">┌──────────┐</span>  <span style="color:var(--red)">┌──────────────────┐</span>
+                     <span style="color:var(--yellow)">│ RESPOND  │</span>  <span style="color:var(--red)">│ STATIC FALLBACK  │</span>
+                     <span style="color:var(--yellow)">└──────────┘</span>  <span style="color:var(--red)">│ findBestMatch()  │</span>
+                                  <span style="color:var(--red)">└──────────────────┘</span></div>
+  </div>
+</div>
+
+<!-- VIEW 5: FIGURE AUTOMATION -->
+<div class="view" id="view-automation">
+  <h2 class="section-title">Automating Architecture Figures</h2>
+  <div class="auto-cards">
+    <div class="auto-card">
+      <h4>1. Mermaid.js Diagrams</h4>
+      <div class="approach">Best for: Architecture, flow charts, sequence diagrams</div>
+      <p>Mermaid renders diagrams from text definitions. Write as markdown, render to SVG/PNG automatically. Integrates with GitHub and can be embedded in docx via image conversion.</p>
+      <div class="code-block">graph TB
+  Claude[Claude AI] -->|MCP| MCP[MCP Servers]
+  MCP -->|API| Grafana[:3001]
+  MCP -->|API| N8N[:5678]
+  Grafana -->|Flux| InfluxDB[:8086]
+  N8N -->|HTTP| Ollama[:11434]</div>
+    </div>
+
+    <div class="auto-card">
+      <h4>2. N8N Workflow Automation</h4>
+      <div class="approach">Best for: Scheduled regeneration on config changes</div>
+      <p>N8N workflow watches for changes to docker-compose.yml or MCP configs, triggers diagram regeneration using Mermaid CLI or D3.js, drops updated SVG/PNG into output folder.</p>
+      <div class="code-block">Workflow: "Auto-Generate Architecture Figures"
+┌──────────────┐
+│ File Watcher  │ watches docker-compose.yml
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│ Code Node    │ Parse YAML → extract services
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│ Write File   │ → /srv/botmaton/docs/figures/
+└──────────────┘</div>
+    </div>
+
+    <div class="auto-card">
+      <h4>3. D3.js / SVG Generation</h4>
+      <div class="approach">Best for: Complex, interactive, data-driven diagrams</div>
+      <p>For publication-quality figures, use D3.js or raw SVG generation. A Node.js script reads Docker and MCP configs, generates styled SVGs matching Botmaton's visual language.</p>
+      <div class="code-block">// generate-figures.js
+const compose = yaml.load(
+  fs.readFileSync('docker-compose.yml')
+);
+const services = Object.keys(compose.services);
+// → Generate SVG with Botmaton styling
+// → Export as PNG for docx embedding</div>
+    </div>
+
+    <div class="auto-card">
+      <h4>4. Claude + MCP Automation</h4>
+      <div class="approach">Best for: On-demand generation during writing sessions</div>
+      <p>During documentation sessions, Claude can use Filesystem MCP to read docker-compose.yml, extract running services, and generate an up-to-date architecture diagram as HTML or SVG.</p>
+      <div class="code-block">Claude workflow:
+1. MCP:Filesystem → read docker-compose.yml
+2. MCP:Docker → list running containers
+3. Generate SVG/HTML diagram
+4. Convert to PNG (puppeteer/sharp)
+5. Save to docs/figures/
+6. Embed in documentation</div>
+    </div>
+
+    <div class="auto-card">
+      <h4>5. Folder Tree Generator</h4>
+      <div class="approach">Best for: Always-current directory structure figures</div>
+      <p>A script walks the actual filesystem and generates a styled folder tree image. Run before each documentation session to ensure folder trees are always accurate.</p>
+      <div class="code-block">// tree-to-image.js
+const tree = execSync(
+  'tree -L 3 /srv/botmaton',
+  { encoding: 'utf8' }
+);
+// Convert to styled SVG
+// Colors: dirs=#00d4ff, files=#64748b
+// Font: JetBrains Mono 10pt
+// Export as PNG at 550px wide</div>
+    </div>
+
+    <div class="auto-card">
+      <h4>6. Recommended Pipeline</h4>
+      <div class="approach">Combining all approaches into one workflow</div>
+      <p>Combine Claude's on-demand generation with N8N scheduled updates. Architecture diagrams update automatically when configs change, folder trees regenerate before each writing session.</p>
+      <div class="code-block">AUTOMATED (N8N scheduled):
+• Architecture diagram → on config change
+• Folder tree figures → nightly
+• Service status diagram → hourly
+
+ON-DEMAND (Claude + MCP):
+• Chapter-specific figures
+• Comparison diagrams
+• Botmaton cube layout diagrams
+
+ALL outputs → /srv/botmaton/docs/figures/
+ALL outputs → 550px wide PNG for docx
+ALL outputs → Botmaton visual language</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
