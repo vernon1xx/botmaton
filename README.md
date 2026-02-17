@@ -6,11 +6,11 @@
 
 <div align="center">
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-00d4ff?style=for-the-badge)](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.1-aura.html)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-00d4ff?style=for-the-badge)](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.2-aura.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/Version-3.1-00ff88?style=for-the-badge)](#changelog)
+[![Version](https://img.shields.io/badge/Version-3.2-00ff88?style=for-the-badge)](#changelog)
 
-**[🌟 Try the Live Demo →](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.1-aura.html)**
+**[🌟 Try the Live Demo →](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.2-aura.html)**
 
 </div>
 
@@ -33,13 +33,13 @@ Six configurable faces organize your facility's operational data:
 | Face | Domain | What Lives Here |
 |------|--------|-----------------|
 | 🏢 **Administration** | HR & Policy | Employee directory, handbooks, training records, forms |
-| 🛡️ **Safety** | Compliance & Protection | LOTO procedures, JSAs, incidents, PPE, permits |
+| 🛡️ **Safety** | Compliance & Protection | LOTO procedures, JSAs, incidents, PPE, safety dashboard |
 | 🏭 **Production** | Operations | Schedules, output tracking, quality metrics, SOPs |
-| 🔧 **Maintenance** | Asset Management | Work orders, PM schedules, equipment registry, parts |
+| 🔧 **Maintenance** | Asset Management | Work orders, PM schedules, equipment registry, maintenance dashboard |
 | 🌿 **Environmental** | Regulatory | Air quality, water, waste tracking, permits |
-| ⚙️ **Tools** | Configuration | Platform setup, reports, data import |
+| ⚙️ **Tools** | Configuration | 8 modular tools — platform setup, reports, data import, robotics preview |
 
-Plus a **7th button** — the **Interactive Facility Map** — a full-screen drill-down view from campus level to individual equipment components.
+Plus a **7th button** — the **Interactive Facility Map** — a full-screen drill-down view from campus level to individual equipment components, now with a **Robot Fleet overlay** showing real-time robot positions across your facility.
 
 ---
 
@@ -48,12 +48,38 @@ Plus a **7th button** — the **Interactive Facility Map** — a full-screen dri
 Aura is more than a chatbot. She's a facility operations AI with full platform knowledge:
 
 - **Natural Language Queries** — "Show me LOTO for Boiler 1" or "What's overdue in Building C?"
-- **Voice Input/Output** — Hands-free operation with professional text-to-speech
+- **Voice Input/Output** — Hands-free operation with professional text-to-speech via ElevenLabs
 - **Audio-Reactive Visuals** — The cube glows and particles dance when Aura speaks
 - **Guided Onboarding** — "Take a Tour" and Aura walks you through the entire platform
-- **Time-Aware Greetings** — Good morning, afternoon, or evening based on your local time
+- **Robot Fleet Awareness** — "Where is Atlas-01?" or "Show me robot fleet status"
+- **Dashboard Navigation** — "Show me the safety dashboard" routes directly to the right face
 
-> 💡 **Try it:** Open the [demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.1-aura.html), enable sound, and click "Take a Tour"
+> 💡 **Try it:** Open the [demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.2-aura.html), enable sound, and click "Take a Tour"
+
+---
+
+## 🤖 Robotics Manager Preview
+
+Version 3.2 introduces a preview of the **Robotics Manager** — Botmaton's 8th modular tool for training, monitoring, and controlling industrial robots:
+
+- **Robot Fleet Overlay** — Toggle real-time robot positions on the Facility Map
+- **8 Simulated Robots** — AGVs, robotic arms, inspection drone, AMR, and android
+- **Live Movement** — AGVs simulate position updates every 5 seconds
+- **Safety Monitoring** — E-STOP indicators with red pulsing alerts
+- **Fleet Summary** — Active, idle, charging, and emergency stop counts at a glance
+
+Robots are treated as equipment within the existing facility hierarchy — they inherit maintenance scheduling, LOTO procedures, and compliance tracking automatically. Full development coming in Book 7.
+
+---
+
+## 📊 Grafana-Powered Dashboards
+
+New in v3.2 — dedicated operational dashboards on the Safety and Maintenance faces:
+
+- **Safety Dashboard** — Incident trends, inspection compliance, permit tracking
+- **Maintenance Dashboard** — Work order backlogs, PM compliance, MTBF/MTTR metrics
+
+These demonstrate Botmaton's integration with the Grafana monitoring stack for real-time operational intelligence.
 
 ---
 
@@ -68,7 +94,7 @@ Botmaton is designed for real industrial environments:
 - **Water/Wastewater** — Treatment plants, pump stations
 - **Energy & Utilities** — Power generation, distribution
 
-The platform connects to the backend infrastructure taught in our documentation series (Docker, Grafana, N8N, Ollama, PostgreSQL, InfluxDB) to deliver real operational intelligence.
+The platform connects to backend infrastructure (Docker, Grafana, N8N, Ollama, PostgreSQL, InfluxDB) to deliver real operational intelligence — all self-hosted on your network.
 
 ---
 
@@ -78,7 +104,7 @@ The platform connects to the backend infrastructure taught in our documentation 
 
 | Resource | Description |
 |----------|-------------|
-| [🎮 Live Demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.1-aura.html) | Interactive prototype with Aura AI assistant |
+| [🎮 Live Demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.2-aura.html) | Interactive prototype with Aura AI assistant |
 | [🏗️ System Architecture](https://vernon1xx.github.io/botmaton/docs/Redundant_AI_Systems_Architecture_Version_3.html) | 5-tab visual architecture reference |
 
 ### The Industrial AI Platform Documentation Series
@@ -92,9 +118,9 @@ Botmaton is the capstone of a comprehensive **6-book technical documentation ser
 | 📘 **Book 3** | Building Real Applications | Grafana dashboards, N8N workflows, practical AI integration |
 | 📙 **Book 4** | Advanced Integration | Predictive maintenance, compliance automation, alert intelligence |
 | 📓 **Book 5** | AI Mastery | Model optimization, prompt engineering, production deployment |
-| 📔 **Book 6** | Botmaton | Building the complete industrial intelligence platform |
+| 📔 **Book 6** | Botmaton | Building the complete industrial intelligence platform (8 chapters, 52 images) |
 
-**340+ pages** of production-ready documentation with step-by-step instructions, screenshots, and real-world examples.
+**All 6 books complete** — 400+ pages of production-ready documentation with step-by-step instructions, screenshots, and real-world examples.
 
 ### 📩 Request Access
 
@@ -113,11 +139,12 @@ The documentation series is available upon request for facilities interested in 
 | **Visuals** | Canvas API | Particle network background |
 | **Voice** | Web Speech API + ElevenLabs | Voice I/O with professional TTS |
 | **AI Backend** | Ollama | Local LLM for Aura intelligence |
-| **Database** | PostgreSQL | Operational data (36-table schema) |
-| **Automation** | N8N | Workflow engine and integrations |
+| **API** | Node.js / Express | REST API with JWT auth & RBAC |
+| **Database** | PostgreSQL | Operational data (47-table schema) |
+| **Automation** | N8N | Workflow engine, backups, alerting |
 | **Dashboards** | Grafana | Real-time monitoring and KPIs |
-| **Time-Series** | InfluxDB | Sensor data and metrics |
-| **Containers** | Docker | Self-hosted deployment |
+| **Time-Series** | InfluxDB | Sensor data, metrics, telemetry |
+| **Containers** | Docker | Self-hosted deployment (7 services) |
 
 **100% self-hosted** — Your data stays on your network.
 
@@ -125,12 +152,13 @@ The documentation series is available upon request for facilities interested in 
 
 ## 🚀 Quick Start (Demo)
 
-1. **[Open the Live Demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.1-aura.html)**
+1. **[Open the Live Demo](https://vernon1xx.github.io/botmaton/prototypes/botmaton-v3.2-aura.html)**
 2. Click **"Take a Tour"** to meet Aura
 3. **Drag the cube** to explore different faces
 4. **Click tiles** to see content panels
 5. Try the **🎤 voice button** (Chrome recommended)
-6. Click **"Facility Map"** for the full-screen spatial view
+6. Click **"Facility Map"** and toggle **"Robot Fleet"** for the fleet overlay
+7. Ask Aura: *"Where is Atlas-01?"* or *"Show me robot fleet status"*
 
 ---
 
@@ -139,8 +167,9 @@ The documentation series is available upon request for facilities interested in 
 ```
 botmaton/
 ├── prototypes/
-│   ├── botmaton-v3.1-aura.html   ← Current version
-│   ├── botmaton-v3-aura.html     ← Previous release
+│   ├── botmaton-v3.2-aura.html   ← Current version
+│   ├── botmaton-v3.1-aura.html   ← ElevenLabs + Skip Tour
+│   ├── botmaton-v3-aura.html     ← Onboarding tour
 │   ├── botmaton-v2-aura.html     ← Audio-reactive update
 │   └── botmaton-v1.html          ← Original prototype
 ├── docs/
@@ -155,28 +184,30 @@ botmaton/
 ## 🔮 Roadmap
 
 **Completed:**
-- ✅ 3D cube interface with 6 faces
-- ✅ Aura AI with voice I/O
-- ✅ Audio-reactive visuals
-- ✅ ElevenLabs professional voice integration
-- ✅ 10-step onboarding tour
-- ✅ Interactive Facility Map (7th button)
-- ✅ Complete 36-table database schema
+- ✅ 3D cube interface with 6 configurable faces
+- ✅ Aura AI with voice I/O and ElevenLabs integration
+- ✅ Audio-reactive visuals (Web Audio API)
+- ✅ 10-step role-adaptive onboarding tour
+- ✅ Interactive Facility Map with drill-down
+- ✅ Complete 47-table database schema (deployed)
+- ✅ REST API with JWT authentication & RBAC
+- ✅ Aura Intelligence Engine (Ollama, personality system, context engine)
+- ✅ Voice services (STT, TTS with ElevenLabs proxy)
+- ✅ Cube navigation & action execution via chat
+- ✅ Production containerization (Docker, 7 services)
+- ✅ Monitoring dashboard (Grafana, 9 panels)
+- ✅ Automated backup & alerting workflows (N8N)
 - ✅ 6-book documentation series
+- ✅ Standalone Deployment Guide
+- ✅ Robotics Manager preview with robot fleet overlay
 
-**In Development:**
-- 🔨 Botmaton Core API layer
-- 🔨 User management & role-based access
-- 🔨 Facility Builder tool
-- 🔨 Maintenance Manager (CMMS)
-
-**Planned:**
-- 📋 LOTO Builder
-- 📋 Compliance Tracker
-- 📋 Report Builder
-- 📋 Industry template packs
-- 📋 Mobile-responsive design
-- 📋 Offline mode
+**Coming Next — Book 7: Industrial Robotics & Automation:**
+- 📋 Robot registry & safety zone management
+- 📋 Teach mode & waypoint programming
+- 📋 Real-time telemetry (WebSocket streaming)
+- 📋 Aura voice control for robots
+- 📋 Protocol adapters (ROS, OPC-UA, MQTT)
+- 📋 Simulation & testing without real hardware
 
 ---
 
